@@ -8,6 +8,7 @@
 import React from 'react';
 import { Layout, Avatar, Button, Space } from 'antd';
 import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { SectionTitle } from '../../ui/Typography';
 import { designTokens } from '../../ui/theme';
 
@@ -27,6 +28,8 @@ interface HeaderProps {
  * Uses MYC design tokens for consistent spacing and colors.
  */
 export function Header({ userName = "User", onLogout }: HeaderProps) {
+  const navigate = useNavigate();
+  
   // Get initials for avatar (first letter of first and last name)
   const getInitials = (name: string): string => {
     return name
@@ -35,6 +38,10 @@ export function Header({ userName = "User", onLogout }: HeaderProps) {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+  
+  const handleTitleClick = () => {
+    navigate('/');
   };
 
   const headerStyle: React.CSSProperties = {
@@ -50,6 +57,8 @@ export function Header({ userName = "User", onLogout }: HeaderProps) {
   const appNameStyle: React.CSSProperties = {
     margin: 0,
     color: designTokens.colors.textPrimary,
+    cursor: 'pointer',
+    transition: 'color 0.2s ease',
   };
 
   const profileAreaStyle: React.CSSProperties = {
@@ -61,7 +70,16 @@ export function Header({ userName = "User", onLogout }: HeaderProps) {
   return (
     <AntHeader style={headerStyle}>
       {/* App Name - Left Side */}
-      <SectionTitle style={appNameStyle}>
+      <SectionTitle 
+        style={appNameStyle}
+        onClick={handleTitleClick}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = designTokens.colors.primary;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = designTokens.colors.textPrimary;
+        }}
+      >
         MYC Studio Management System
       </SectionTitle>
 

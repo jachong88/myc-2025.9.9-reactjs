@@ -7,7 +7,8 @@
 
 import React from 'react';
 import { Layout, Menu } from 'antd';
-import { UserOutlined, BankOutlined } from '@ant-design/icons';
+import { UserOutlined, BankOutlined, DashboardOutlined } from '@ant-design/icons';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { designTokens } from '../../ui/theme';
 
 const { Sider } = Layout;
@@ -30,23 +31,41 @@ interface SidebarProps {
  * Uses MYC design tokens and supports active state highlighting.
  */
 export function Sidebar({ 
-  activeKey = 'users', 
+  activeKey = 'dashboard', 
   onMenuSelect, 
   collapsed = false, 
   onCollapse 
 }: SidebarProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   
-  // Menu items configuration
+  // Determine active key from current route
+  const getCurrentActiveKey = (): string => {
+    const path = location.pathname;
+    if (path.startsWith('/users')) return 'users';
+    if (path.startsWith('/studios')) return 'studios';
+    return 'dashboard';
+  };
+  
+  // Menu items configuration with route mapping
   const menuItems = [
+    {
+      key: 'dashboard',
+      icon: <DashboardOutlined />,
+      label: 'Dashboard',
+      path: '/',
+    },
     {
       key: 'users',
       icon: <UserOutlined />,
       label: 'Users',
+      path: '/users',
     },
     {
       key: 'studios',
       icon: <BankOutlined />,
       label: 'Studios',
+      path: '/studios',
     },
   ];
 
@@ -63,6 +82,12 @@ export function Sidebar({
   };
 
   const handleMenuClick = ({ key }: { key: string }) => {
+    const menuItem = menuItems.find(item => item.key === key);
+    if (menuItem) {
+      navigate(menuItem.path);
+    }
+    
+    // Also call the callback for any additional logic
     if (onMenuSelect) {
       onMenuSelect(key);
     }
@@ -80,8 +105,8 @@ export function Sidebar({
     >
       <Menu
         mode="inline"
-        selectedKeys={[activeKey]}
-        items={menuItems}
+        selectedKeys={[getCurrentActiveKey()]}
+        items={menuItems.map(({ key, icon, label }) => ({ key, icon, label }))}
         onClick={handleMenuClick}
         style={menuStyle}
         theme="light"
