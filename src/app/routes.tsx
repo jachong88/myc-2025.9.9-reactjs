@@ -8,6 +8,7 @@
 import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
 import { AppLayout } from './layout/AppLayout';
 import { Page } from '../shared/components/Page';
+import { RouteErrorBoundary } from '../shared/components';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 
 function UsersPlaceholder() {
@@ -77,7 +78,9 @@ function RootLayout({ children }: { children: React.ReactNode }) {
       onMenuSelect={handleMenuSelect}
       onLogout={handleLogout}
     >
-      {children}
+      <RouteErrorBoundary>
+        {children}
+      </RouteErrorBoundary>
     </AppLayout>
   );
 }
