@@ -70,8 +70,8 @@ export function Sidebar({
   ];
 
   const siderStyle: React.CSSProperties = {
-    backgroundColor: '#fff',
-    borderRight: '1px solid #f0f0f0',
+    backgroundColor: designTokens.colors.background, // Layout background token
+    borderRight: '1px solid rgba(0, 0, 0, 0.06)', // Subtle neutral divider
     height: '100vh',
   };
 

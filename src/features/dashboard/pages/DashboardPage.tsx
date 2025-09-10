@@ -12,6 +12,7 @@ import { Page } from '../../../shared/components/Page';
 import { Card } from '../../../ui/Card';
 import { PageTitle, BodyText } from '../../../ui/Typography';
 import { Button } from '../../../ui/Button';
+import { designTokens } from '../../../ui/theme';
 
 export function DashboardPage() {
   const navigate = useNavigate();
@@ -42,13 +43,17 @@ export function DashboardPage() {
             onClick={handleNavigateToUsers}
             hoverable
           >
-            <div style={{ textAlign: 'center', padding: '1rem' }}>
-              <UserOutlined style={{ fontSize: '48px', color: '#1677ff', marginBottom: '1rem' }} />
+            <div style={{ textAlign: 'center', padding: designTokens.spacing.md }}>
+              <UserOutlined style={{ 
+                fontSize: 48, 
+                color: designTokens.colors.primary, 
+                marginBottom: designTokens.spacing.md 
+              }} />
               <BodyText>
                 Manage system users, roles, and permissions. 
                 Create, edit, and organize user accounts.
               </BodyText>
-              <div style={{ marginTop: '1rem' }}>
+              <div style={{ marginTop: designTokens.spacing.md }}>
                 <Button variant="primary" onClick={handleNavigateToUsers}>
                   Manage Users
                 </Button>
@@ -64,13 +69,17 @@ export function DashboardPage() {
             onClick={handleNavigateToStudios}
             hoverable
           >
-            <div style={{ textAlign: 'center', padding: '1rem' }}>
-              <BankOutlined style={{ fontSize: '48px', color: '#1677ff', marginBottom: '1rem' }} />
+            <div style={{ textAlign: 'center', padding: designTokens.spacing.md }}>
+              <BankOutlined style={{ 
+                fontSize: 48, 
+                color: designTokens.colors.primary, 
+                marginBottom: designTokens.spacing.md 
+              }} />
               <BodyText>
                 Manage music studios, schedules, and resources.
                 Configure studio settings and availability.
               </BodyText>
-              <div style={{ marginTop: '1rem' }}>
+              <div style={{ marginTop: designTokens.spacing.md }}>
                 <Button variant="primary" onClick={handleNavigateToStudios}>
                   Manage Studios
                 </Button>
