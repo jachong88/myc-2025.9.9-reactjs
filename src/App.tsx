@@ -1,35 +1,42 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import { MYCThemeProvider } from './ui/ThemeProvider';
+import { AppLayout } from './app/layout';
+import { PageTitle } from './ui/Typography';
 
+/**
+ * Main App Component
+ * 
+ * Integrates MYCThemeProvider for design system consistency
+ * and AppLayout for global layout structure
+ */
 function App() {
-  const [count, setCount] = useState(0)
+  const handleMenuSelect = (key: string) => {
+    console.log('Menu selected:', key);
+    // TODO: Add routing logic in future user stories
+  };
+
+  const handleLogout = () => {
+    console.log('Logout clicked');
+    // TODO: Add authentication logic in future user stories
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <MYCThemeProvider>
+      <AppLayout
+        userName="Admin User"
+        activeMenuItem="users"
+        onMenuSelect={handleMenuSelect}
+        onLogout={handleLogout}
+      >
+        {/* Placeholder content - will be replaced with routing in future stories */}
+        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+          <PageTitle>Welcome to MYC Studio Management System</PageTitle>
+          <p>Global layout is now active with header, sidebar, and content area.</p>
+          <p>Navigation and routing will be added in the next user story.</p>
+        </div>
+      </AppLayout>
+    </MYCThemeProvider>
+  );
 }
 
-export default App
+export default App;
