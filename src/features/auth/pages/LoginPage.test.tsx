@@ -157,8 +157,8 @@ describe('LoginPage', () => {
       expect(screen.getByText('Signing in with Google...')).toBeInTheDocument();
       expect(screen.getByRole('button')).toBeDisabled();
       
-      // Google icon should not be visible during loading
-      expect(screen.getByRole('button').querySelector('svg')).not.toBeInTheDocument();
+      // Loading spinner should be visible during loading
+      expect(screen.getByRole('button').querySelector('svg[data-icon="loading"]')).toBeInTheDocument();
     });
   });
 
@@ -202,6 +202,21 @@ describe('LoginPage', () => {
 
   describe('Accessibility', () => {
     it('should have proper ARIA attributes', () => {
+      // Mock normal (non-loading, non-error) state
+      vi.spyOn(useAuthModule, 'useLogin').mockReturnValue({
+        login: mockLogin,
+        isLoggingIn: false,
+        error: null,
+        clearError: mockClearError,
+        isAuthenticated: false
+      });
+      
+      vi.spyOn(useAuthModule, 'useAuthError').mockReturnValue({
+        error: null,
+        hasError: false,
+        clearError: mockClearError
+      });
+
       render(
         <RouterWrapper>
           <LoginPage />
