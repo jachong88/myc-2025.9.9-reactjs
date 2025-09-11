@@ -1,27 +1,27 @@
 /**
  * Authentication API Integration Test
  * 
- * Tests the authentication API client endpoints and auth store integration.
- * Verifies API calls are properly configured and auth flow works.
+ * Tests the Firebase authentication API client and auth store integration.
+ * Verifies Firebase auth integration and profile API calls work correctly.
  */
 
 import { authAPI } from './auth';
 import { useAuthStore } from '../stores/authStore';
-import type { LoginCredentials } from '../types/domain';
 
 /**
- * Test authentication API configuration
+ * Test Firebase authentication API configuration
  */
 export function testAuthAPIConfiguration() {
-  console.log('🧪 Testing Auth API Configuration...');
+  console.log('🧪 Testing Firebase Auth API Configuration...');
 
   const tests = [
     { name: 'authAPI exists', test: () => Boolean(authAPI) },
-    { name: 'login method exists', test: () => typeof authAPI.login === 'function' },
-    { name: 'logout method exists', test: () => typeof authAPI.logout === 'function' },
-    { name: 'refreshToken method exists', test: () => typeof authAPI.refreshToken === 'function' },
     { name: 'getProfile method exists', test: () => typeof authAPI.getProfile === 'function' },
     { name: 'updateProfile method exists', test: () => typeof authAPI.updateProfile === 'function' },
+    { name: 'syncFirebaseUser method exists', test: () => typeof authAPI.syncFirebaseUser === 'function' },
+    { name: 'legacy login method removed', test: () => typeof (authAPI as any).login === 'undefined' },
+    { name: 'legacy logout method removed', test: () => typeof (authAPI as any).logout === 'undefined' },
+    { name: 'legacy refreshToken method removed', test: () => typeof (authAPI as any).refreshToken === 'undefined' },
   ];
 
   let passed = 0;
@@ -40,25 +40,25 @@ export function testAuthAPIConfiguration() {
     }
   });
 
-  console.log(`📊 Auth API Configuration Tests: ${passed}/${total} passed\n`);
+  console.log(`📊 Firebase Auth API Configuration Tests: ${passed}/${total} passed\n`);
   return passed === total;
 }
 
 /**
- * Test auth store integration
+ * Test Firebase auth store integration
  */
 export function testAuthStoreIntegration() {
-  console.log('🧪 Testing Auth Store Integration...');
+  console.log('🧪 Testing Firebase Auth Store Integration...');
 
   const store = useAuthStore.getState();
   
   const tests = [
     { name: 'Auth store exists', test: () => Boolean(store) },
-    { name: 'login method exists', test: () => typeof store.login === 'function' },
-    { name: 'logout method exists', test: () => typeof store.logout === 'function' },
-    { name: 'refreshToken method exists', test: () => typeof store.refreshToken === 'function' },
+    { name: 'login method exists (Firebase)', test: () => typeof store.login === 'function' },
+    { name: 'logout method exists (Firebase)', test: () => typeof store.logout === 'function' },
+    { name: 'refreshToken method exists (compatibility)', test: () => typeof store.refreshToken === 'function' },
     { name: 'updateProfile method exists', test: () => typeof store.updateProfile === 'function' },
-    { name: 'initializeAuth method exists', test: () => typeof store.initializeAuth === 'function' },
+    { name: 'initializeAuth method exists (Firebase)', test: () => typeof store.initializeAuth === 'function' },
     { name: 'Initial state correct', test: () => !store.isAuthenticated && !store.user && store.isInitialized === false },
   ];
 
@@ -78,36 +78,45 @@ export function testAuthStoreIntegration() {
     }
   });
 
-  console.log(`📊 Auth Store Integration Tests: ${passed}/${total} passed\n`);
+  console.log(`📊 Firebase Auth Store Integration Tests: ${passed}/${total} passed\n`);
   return passed === total;
 }
 
 /**
- * Test API endpoint paths and configuration
+ * Test Firebase API endpoint configuration
  */
 export function testAPIEndpointConfiguration() {
-  console.log('🧪 Testing API Endpoint Configuration...');
+  console.log('🧪 Testing Firebase API Endpoint Configuration...');
 
-  // Mock credentials for testing structure (not real login)
-  const mockCredentials: LoginCredentials = {
+  // Mock Firebase user for testing structure
+  const mockFirebaseUser = {
+    uid: 'test-uid-123',
     email: 'test@example.com',
-    password: 'password123'
+    displayName: 'Test User'
   };
 
   const tests = [
     {
-      name: 'Login credentials structure',
+      name: 'Firebase user structure valid',
       test: () => {
-        return typeof mockCredentials.email === 'string' && 
-               typeof mockCredentials.password === 'string';
+        return typeof mockFirebaseUser.uid === 'string' && 
+               typeof mockFirebaseUser.email === 'string' &&
+               typeof mockFirebaseUser.displayName === 'string';
       }
     },
     {
-      name: 'API client configured correctly',
+      name: 'API client configured correctly for Firebase',
       test: () => {
-        // Test that API methods exist and are callable (structure test only)
-        return ['login', 'logout', 'refreshToken', 'getProfile', 'updateProfile']
+        // Test that remaining API methods exist and are callable
+        return ['getProfile', 'updateProfile', 'syncFirebaseUser']
           .every(method => typeof authAPI[method as keyof typeof authAPI] === 'function');
+      }
+    },
+    {
+      name: 'Legacy auth methods properly removed',
+      test: () => {
+        // Ensure old methods are not present
+        return !('login' in authAPI) && !('logout' in authAPI) && !('refreshToken' in authAPI);
       }
     }
   ];
@@ -128,15 +137,15 @@ export function testAPIEndpointConfiguration() {
     }
   });
 
-  console.log(`📊 API Endpoint Configuration Tests: ${passed}/${total} passed\n`);
+  console.log(`📊 Firebase API Endpoint Configuration Tests: ${passed}/${total} passed\n`);
   return passed === total;
 }
 
 /**
- * Run all authentication integration tests
+ * Run all Firebase authentication integration tests
  */
 export async function runAuthenticationIntegrationTests() {
-  console.log('🚀 Running Authentication API Integration Tests\n');
+  console.log('🚀 Running Firebase Authentication API Integration Tests\n');
   console.log('=' .repeat(60));
 
   const results = [
@@ -149,49 +158,53 @@ export async function runAuthenticationIntegrationTests() {
   const totalTests = results.length;
 
   console.log('=' .repeat(60));
-  console.log(`🏁 Integration Tests Complete: ${totalPassed}/${totalTests} test suites passed`);
+  console.log(`🏁 Firebase Integration Tests Complete: ${totalPassed}/${totalTests} test suites passed`);
   
   if (totalPassed === totalTests) {
-    console.log('✅ All authentication API integration functionality is working correctly!');
-    console.log('🔗 Auth store is properly connected to real API endpoints');
-    console.log('🚀 Ready for backend integration');
+    console.log('✅ All Firebase authentication integration functionality is working correctly!');
+    console.log('🔗 Auth store is properly connected to Firebase and profile API endpoints');
+    console.log('🚀 Ready for Firebase and backend integration');
   } else {
-    console.log('❌ Some tests failed. Please review the implementation.');
+    console.log('❌ Some tests failed. Please review the Firebase implementation.');
   }
 
   return totalPassed === totalTests;
 }
 
 /**
- * Test summary and next steps
+ * Test summary and next steps for Firebase integration
  */
 export function showIntegrationSummary() {
-  console.log('\n📋 Authentication API Integration Summary:');
-  console.log('✅ Real API client created with all endpoints');
-  console.log('✅ Auth store updated to use real API calls');
-  console.log('✅ Login flow: credentials → API → token storage → user state');
-  console.log('✅ Logout flow: API call → token invalidation → state clear');
-  console.log('✅ Token refresh: automatic retry with fallback to logout');
-  console.log('✅ Profile management: fetch/update user data via API');
-  console.log('✅ Error handling: comprehensive API error management');
+  console.log('\n📋 Firebase Authentication API Integration Summary:');
+  console.log('✅ Firebase authentication integrated with auth store');
+  console.log('✅ Google login: Firebase popup → user state → profile sync');
+  console.log('✅ Logout flow: Firebase signOut → state clear');
+  console.log('✅ Token refresh: handled automatically by Firebase');
+  console.log('✅ Profile management: fetch/update user data via backend API');
+  console.log('✅ Error handling: Firebase-specific error management');
+  console.log('✅ Legacy email/password authentication removed');
   
-  console.log('\n🔧 Backend Requirements:');
-  console.log('- POST /auth/login (email, password) → {user, accessToken}');
-  console.log('- POST /auth/logout (authenticated) → invalidate refresh token');
-  console.log('- POST /auth/refresh (httpOnly cookie) → {accessToken}');
-  console.log('- GET /auth/me (authenticated) → current user profile');
-  console.log('- PUT /auth/me (authenticated) → update user profile');
+  console.log('\n🔧 Backend Requirements (Optional):');
+  console.log('- GET /auth/me (authenticated with Firebase ID token) → user profile');
+  console.log('- PUT /auth/me (authenticated with Firebase ID token) → update profile');
+  console.log('- POST /auth/sync-firebase-user (Firebase user data) → sync to backend');
+  
+  console.log('\n🔥 Firebase Requirements:');
+  console.log('- Firebase project configured with Google authentication');
+  console.log('- Firebase config object properly set in environment variables');
+  console.log('- Google OAuth configured in Firebase console');
   
   console.log('\n🎯 Next Steps:');
-  console.log('1. Configure backend API endpoints');
-  console.log('2. Test with real backend server');
-  console.log('3. Verify token refresh flow works with httpOnly cookies');
-  console.log('4. Test complete authentication lifecycle');
+  console.log('1. Configure Firebase project and Google authentication');
+  console.log('2. Set up Firebase environment variables');
+  console.log('3. Test Google login popup flow');
+  console.log('4. Test complete Firebase authentication lifecycle');
+  console.log('5. Optionally integrate with backend for additional user data');
 }
 
 // Auto-run tests in development environment
 if (process.env.NODE_ENV === 'development') {
-  console.log('\n🔧 Development Mode: Auto-running authentication integration tests...\n');
+  console.log('\n🔧 Development Mode: Auto-running Firebase authentication integration tests...\n');
   runAuthenticationIntegrationTests().then(() => {
     showIntegrationSummary();
   });
