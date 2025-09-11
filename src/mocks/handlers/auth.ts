@@ -10,10 +10,17 @@ import type { User } from '../../shared/types/domain';
 import { findUserByEmail, findUserByFirebaseUid, createFirebaseUser } from '../fixtures/users';
 
 /**
+ * Get API base URL for MSW handlers from environment variables
+ */
+function getApiBaseUrl(): string {
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+}
+
+/**
  * POST /auth/sync-firebase-user - Sync Firebase user to backend
  * Optional endpoint for syncing Firebase user data with backend
  */
-export const syncFirebaseUserHandler = http.post('http://localhost:8080/api/auth/sync-firebase-user', async ({ request }) => {
+export const syncFirebaseUserHandler = http.post(`${getApiBaseUrl()}/auth/sync-firebase-user`, async ({ request }) => {
   try {
     const firebaseUser = await request.json() as {
       uid: string;
@@ -67,7 +74,7 @@ export const syncFirebaseUserHandler = http.post('http://localhost:8080/api/auth
  * GET /auth/me - Get current user profile (Firebase authenticated)
  * In a real app, this would validate Firebase ID tokens
  */
-export const profileHandler = http.get('http://localhost:8080/api/auth/me', async ({ request }) => {
+export const profileHandler = http.get(`${getApiBaseUrl()}/auth/me`, async ({ request }) => {
   try {
     // Get authorization header (would contain Firebase ID token in real app)
     const authHeader = request.headers.get('authorization');
@@ -132,7 +139,7 @@ export const profileHandler = http.get('http://localhost:8080/api/auth/me', asyn
 /**
  * OPTIONS handlers for CORS preflight requests
  */
-const optionsHandler = http.options('http://localhost:8080/api/auth/*', () => {
+const optionsHandler = http.options(`${getApiBaseUrl()}/auth/*`, () => {
   return new HttpResponse(null, {
     status: 200,
     headers: {

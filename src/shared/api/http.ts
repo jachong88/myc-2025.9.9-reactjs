@@ -90,6 +90,7 @@ function getEnvConfig(): EnvConfig {
     apiTimeout: parseInt(import.meta.env.VITE_API_TIMEOUT || '10000', 10),
     environment: import.meta.env.VITE_ENV || 'development',
     useMockApi: import.meta.env.VITE_USE_MOCK_API === 'true',
+    useMSW: import.meta.env.VITE_USE_MSW === 'true',
     debugApi: import.meta.env.VITE_DEBUG_API === 'true',
     debugAuth: import.meta.env.VITE_DEBUG_AUTH === 'true',
   };

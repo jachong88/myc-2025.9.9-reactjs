@@ -540,6 +540,7 @@ export interface EnvConfig {
   apiTimeout: number;
   environment: string;
   useMockApi: boolean;
+  useMSW: boolean;
   debugApi: boolean;
   debugAuth: boolean;
 }
