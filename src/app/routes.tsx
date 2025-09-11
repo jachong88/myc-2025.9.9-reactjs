@@ -5,11 +5,16 @@
  * Uses nested routing with AppLayout as the root layout component.
  */
 
+import React, { useState } from 'react';
 import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
 import { AppLayout } from './layout/AppLayout';
 import { Page } from '../shared/components/Page';
 import { RouteErrorBoundary } from '../shared/components';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
+import LoginPage from '../features/auth/pages/LoginPage';
+import { ProtectedRoute, UnauthorizedPage } from '../shared/components/routing';
+import { LogoutModal } from '../shared/components/auth';
+import { useUser } from '../shared/hooks/useAuth';
 
 function UsersPlaceholder() {
   return (
@@ -52,6 +57,8 @@ function NotFoundPage() {
  */
 function RootLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const { user } = useUser();
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   
   // Determine active menu item based on current route
   const getActiveMenuItem = (): string => {
@@ -67,21 +74,37 @@ function RootLayout({ children }: { children: React.ReactNode }) {
   };
 
   const handleLogout = () => {
-    console.log('Logout clicked');
-    // TODO: Add authentication logic in future user stories
+    setLogoutModalOpen(true);
+  };
+
+  const handleLogoutCancel = () => {
+    setLogoutModalOpen(false);
+  };
+
+  const handleLogoutSuccess = () => {
+    setLogoutModalOpen(false);
+    // ProtectedRoute will handle navigation to login
   };
 
   return (
-    <AppLayout
-      userName="Admin User"
-      activeMenuItem={getActiveMenuItem()}
-      onMenuSelect={handleMenuSelect}
-      onLogout={handleLogout}
-    >
-      <RouteErrorBoundary>
-        {children}
-      </RouteErrorBoundary>
-    </AppLayout>
+    <>
+      <AppLayout
+        userName={user?.email || 'User'}
+        activeMenuItem={getActiveMenuItem()}
+        onMenuSelect={handleMenuSelect}
+        onLogout={handleLogout}
+      >
+        <RouteErrorBoundary>
+          {children}
+        </RouteErrorBoundary>
+      </AppLayout>
+      
+      <LogoutModal
+        open={logoutModalOpen}
+        onCancel={handleLogoutCancel}
+        onSuccess={handleLogoutSuccess}
+      />
+    </>
   );
 }
 
@@ -89,30 +112,48 @@ function RootLayout({ children }: { children: React.ReactNode }) {
  * Application Router Configuration
  * 
  * Uses createBrowserRouter for modern routing with data APIs.
- * All routes are nested under the RootLayout which includes AppLayout.
+ * Most routes are nested under the RootLayout, except authentication pages.
  */
 export const router = createBrowserRouter([
   {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
     path: '/',
     element: (
-      <RootLayout>
-        <DashboardPage />
-      </RootLayout>
+      <ProtectedRoute>
+        <RootLayout>
+          <DashboardPage />
+        </RootLayout>
+      </ProtectedRoute>
     ),
   },
   {
     path: '/users',
     element: (
-      <RootLayout>
-        <UsersPlaceholder />
-      </RootLayout>
+      <ProtectedRoute requiredRole="admin">
+        <RootLayout>
+          <UsersPlaceholder />
+        </RootLayout>
+      </ProtectedRoute>
     ),
   },
   {
     path: '/studios',
     element: (
+      <ProtectedRoute>
+        <RootLayout>
+          <StudiosPlaceholder />
+        </RootLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/unauthorized',
+    element: (
       <RootLayout>
-        <StudiosPlaceholder />
+        <UnauthorizedPage />
       </RootLayout>
     ),
   },
