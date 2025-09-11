@@ -2,39 +2,26 @@
  * Login Page
  * 
  * Provides user authentication interface following MYC design system.
- * Features centered card layout with email/password form validation.
+ * Features centered card layout ready for Google authentication.
  */
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import { Card } from '../../../ui/Card';
 import { PageTitle, BodyText } from '../../../ui/Typography';
-import { Form, FormItem, FormActions, useForm } from '../../../ui/Form';
-import { Input, InputPassword } from '../../../ui/Input';
 import { Button } from '../../../ui/Button';
-import { useLogin, useAuthError } from '../../../shared/hooks/useAuth';
+import { useAuthError } from '../../../shared/hooks/useAuth';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 /**
  * Login Page Component
  * 
- * Renders a centered login form following MYC wireframe specifications.
- * Integrates with authentication system for secure login flow.
+ * Renders a centered login interface following MYC wireframe specifications.
+ * Prepared for Google authentication integration.
  */
 export default function LoginPage() {
-  const [form] = useForm();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, isLoggingIn } = useLogin();
   const { error, hasError, clearError } = useAuthError(5000);
-
-  const handleFinish = useCallback(async (values: { email: string; password: string }) => {
-    const result = await login(values);
-    if (result.success) {
-      // Redirect to intended route or dashboard
-      const redirectPath = searchParams.get('from') || '/';
-      navigate(redirectPath, { replace: true });
-    }
-  }, [login, navigate, searchParams]);
 
   return (
     <div
@@ -91,54 +78,12 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Login Form */}
-          <Form 
-            form={form} 
-            layout="vertical" 
-            onFinish={handleFinish}
-            style={{ width: '100%' }}
-          >
-            <FormItem
-              name="email"
-              label="Email"
-              rules={[
-                { required: true, message: 'Email is required' },
-                { type: 'email', message: 'Please enter a valid email address' },
-              ]}
-            >
-              <Input 
-                type="email"
-                placeholder="you@example.com" 
-                allowClear 
-                size="large"
-              />
-            </FormItem>
-
-            <FormItem
-              name="password"
-              label="Password"
-              rules={[{ required: true, message: 'Password is required' }]}
-            >
-              <InputPassword 
-                placeholder="Enter your password" 
-                size="large"
-              />
-            </FormItem>
-
-            <div style={{ marginTop: '8px' }}>
-              <FormActions>
-                <Button
-                  variant="primary"
-                  htmlType="submit"
-                  loading={isLoggingIn as any}
-                  size="large"
-                  style={{ width: '100%' }}
-                >
-                  {isLoggingIn ? 'Signing in...' : 'Login'}
-                </Button>
-              </FormActions>
-            </div>
-          </Form>
+          {/* Authentication Section - Ready for Google Login */}
+          <div style={{ textAlign: 'center' }}>
+            <BodyText type="secondary">
+              Authentication system ready for Google login integration
+            </BodyText>
+          </div>
         </div>
       </Card>
     </div>
