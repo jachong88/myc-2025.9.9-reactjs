@@ -73,10 +73,10 @@ export interface Province {
 
 /**
  * Login Credentials Interface
+ * Updated for Firebase Google Authentication
  */
 export interface LoginCredentials {
-  email: string;
-  password: string;
+  // For Firebase Google Auth - no credentials needed, just trigger login
   rememberMe?: boolean;
 }
 

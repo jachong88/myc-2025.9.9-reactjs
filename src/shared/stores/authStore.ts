@@ -1,21 +1,21 @@
 /**
  * Authentication Zustand Store
  * 
- * Manages user authentication state, login/logout operations, and token management
- * Integrates with JWT utilities for secure token handling
+ * Manages Firebase Google authentication state, login/logout operations, and user management
+ * Integrates with Firebase Auth for secure authentication handling
  */
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { User, LoginCredentials, AuthResponse } from '../types/domain';
+import { auth, googleProvider } from '../../config/firebase';
 import { 
-  setAccessToken, 
-  getAccessToken, 
-  clearTokens, 
-  decodeToken, 
-  isTokenExpired 
-} from '../utils/jwt';
-import { authAPI } from '../api/auth';
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  type User as FirebaseUser
+} from 'firebase/auth';
 
 /**
  * Authentication State Interface
@@ -26,14 +26,14 @@ interface AuthState {
   user: User | null;
   isLoading: boolean;
   error: string | null;
-  isInitialized: boolean; // Tracks if auth state has been restored from storage
+  isInitialized: boolean; // Tracks if auth state has been restored from Firebase
 
   // Actions
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (credentials?: LoginCredentials) => Promise<void>; // Made optional for Firebase Google auth
   logout: () => Promise<void>;
   clearError: () => void;
   initializeAuth: () => Promise<void>;
-  refreshToken: () => Promise<void>;
+  refreshToken: () => Promise<void>; // Not needed for Firebase, but kept for compatibility
   updateUser: (user: Partial<User>) => void;
   updateProfile: (profileData: Partial<User>) => Promise<void>;
   
@@ -42,6 +42,22 @@ interface AuthState {
   hasAnyRole: (roles: string[]) => boolean;
   isAdmin: () => boolean;
   canAccess: (resource: string) => boolean;
+}
+
+/**
+ * Convert Firebase User to Application User
+ */
+function firebaseUserToAppUser(firebaseUser: FirebaseUser): User {
+  return {
+    id: firebaseUser.uid,
+    name: firebaseUser.displayName || 'User',
+    email: firebaseUser.email || '',
+    role: 'student', // Default role, can be customized based on your business logic
+    status: 'active',
+    deleted: false,
+    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+    updatedAt: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),
+  };
 }
 
 /**
@@ -58,48 +74,52 @@ export const useAuthStore = create<AuthState>()(
       isInitialized: false,
 
       /**
-       * Login Action
-       * Handles user authentication and token storage
+       * Login Action - Firebase Google Authentication
+       * Handles Google sign-in using Firebase popup
        */
-      login: async (credentials: LoginCredentials) => {
+      login: async (credentials?: LoginCredentials) => {
         set({ isLoading: true, error: null });
 
         try {
-          // Call real API for authentication
-          const authResponse = await authAPI.login(credentials);
+          // Sign in with Google using Firebase popup
+          const result = await signInWithPopup(auth, googleProvider);
+          const firebaseUser = result.user;
           
-          // Store the access token from server
-          setAccessToken(authResponse.accessToken);
-
-          // Determine user: prefer server user data, fallback to token payload
-          let user: User | null = authResponse.user ?? null;
-          if (!user) {
-            const payload = decodeToken(authResponse.accessToken);
-            if (payload) {
-              user = {
-                id: payload.sub,
-                name: (payload as any).name || 'User',
-                email: payload.email || credentials.email,
-                role: (payload.roles?.[0] as any) || 'student',
-                status: 'active' as any,
-                deleted: false,
-                createdAt: '',
-                updatedAt: '',
-              };
-            }
-          }
+          // Convert Firebase user to application user format
+          const user = firebaseUserToAppUser(firebaseUser);
 
           // Update authentication state
           set({
             isAuthenticated: true,
-            user: user!,
+            user,
             isLoading: false,
             error: null,
           });
 
-          console.log('✅ Login successful:', user?.email);
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Login failed';
+          console.log('✅ Google login successful:', user.email);
+        } catch (error: any) {
+          let errorMessage = 'Login failed';
+          
+          // Handle specific Firebase auth errors
+          if (error.code) {
+            switch (error.code) {
+              case 'auth/popup-closed-by-user':
+                errorMessage = 'Login cancelled by user';
+                break;
+              case 'auth/popup-blocked':
+                errorMessage = 'Popup blocked by browser. Please allow popups and try again.';
+                break;
+              case 'auth/cancelled-popup-request':
+                errorMessage = 'Login request cancelled';
+                break;
+              case 'auth/network-request-failed':
+                errorMessage = 'Network error. Please check your connection and try again.';
+                break;
+              default:
+                errorMessage = error.message || 'Login failed';
+            }
+          }
+
           set({
             isLoading: false,
             error: errorMessage,
@@ -107,35 +127,40 @@ export const useAuthStore = create<AuthState>()(
             user: null,
           });
           
-          // Clear any stored tokens on login failure
-          clearTokens();
-          throw error;
+          throw new Error(errorMessage);
         }
       },
 
       /**
-       * Logout Action
-       * Clears authentication state and tokens
+       * Logout Action - Firebase Sign Out
+       * Clears authentication state and signs out from Firebase
        */
       logout: async () => {
         set({ isLoading: true });
 
         try {
-          // Call logout API endpoint to invalidate refresh token on server
-          await authAPI.logout();
-          console.log('✅ Logout API call successful');
-        } catch (error) {
-          console.warn('⚠️ Logout API call failed, clearing local state anyway:', error);
-        } finally {
-          // Always clear local tokens and state regardless of API call result
-          clearTokens();
+          // Sign out from Firebase
+          await signOut(auth);
+          
+          // Clear local state
           set({
             isAuthenticated: false,
             user: null,
             isLoading: false,
             error: null,
           });
-          console.log('✅ Logout completed - local state cleared');
+          
+          console.log('✅ Logout completed');
+        } catch (error) {
+          console.warn('⚠️ Logout error:', error);
+          
+          // Even if logout fails, clear local state
+          set({
+            isAuthenticated: false,
+            user: null,
+            isLoading: false,
+            error: null,
+          });
         }
       },
 
@@ -148,73 +173,46 @@ export const useAuthStore = create<AuthState>()(
 
       /**
        * Initialize Authentication State
-       * Restores authentication from stored tokens on app startup
+       * Sets up Firebase auth state listener and restores authentication
        */
       initializeAuth: async () => {
         set({ isLoading: true });
 
         try {
-          const accessToken = getAccessToken();
-          
-          if (accessToken && !isTokenExpired(accessToken)) {
-            // Token exists and is valid
-            const payload = decodeToken(accessToken);
-            
-            if (payload) {
-              // Reconstruct basic user from token payload
-              let user: User = {
-                id: payload.sub,
-                name: payload.name || 'User',
-                email: payload.email || '',
-                role: payload.roles?.[0] as any || 'student' as any,
-                status: 'active' as any,
-                deleted: false,
-                createdAt: '',
-                updatedAt: '',
-              };
-
-              // Optionally fetch fresh user data from API for complete profile
-              try {
-                const freshUser = await authAPI.getProfile();
-                user = freshUser;
-                console.log('✅ Fresh user profile fetched from API');
-              } catch (profileError) {
-                console.warn('⚠️ Failed to fetch fresh profile, using token data:', profileError);
-                // Continue with token-based user data
-              }
-
+          // Set up Firebase auth state listener
+          const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+            if (firebaseUser) {
+              // User is signed in
+              const user = firebaseUserToAppUser(firebaseUser);
               set({
                 isAuthenticated: true,
                 user,
                 isLoading: false,
                 isInitialized: true,
               });
-
-              console.log('✅ Authentication restored from token');
-              return;
+              console.log('✅ Firebase auth state restored:', user.email);
+            } else {
+              // User is signed out
+              set({
+                isAuthenticated: false,
+                user: null,
+                isLoading: false,
+                isInitialized: true,
+              });
+              console.log('ℹ️ No Firebase authentication found');
             }
-          }
-
-          // No valid token found
-          clearTokens();
-          set({
-            isAuthenticated: false,
-            user: null,
-            isLoading: false,
-            isInitialized: true,
           });
 
-          console.log('ℹ️ No valid authentication token found');
+          // Store unsubscribe function for cleanup (you might want to handle this in app cleanup)
+          // For now, we'll let it run for the app lifetime
         } catch (error) {
-          console.error('❌ Failed to initialize authentication:', error);
+          console.error('❌ Failed to initialize Firebase authentication:', error);
           
-          // Clear everything on error
-          clearTokens();
           set({
             isAuthenticated: false,
             user: null,
             isLoading: false,
-            error: 'Failed to restore authentication',
+            error: 'Failed to initialize authentication',
             isInitialized: true,
           });
         }
@@ -222,26 +220,12 @@ export const useAuthStore = create<AuthState>()(
 
       /**
        * Refresh Token Action
-       * Attempts to refresh the access token
+       * Firebase handles token refresh automatically, so this is a no-op
+       * Kept for compatibility with existing code
        */
       refreshToken: async () => {
-        set({ isLoading: true });
-
-        try {
-          // Call refresh token API (uses httpOnly cookie)
-          const response = await authAPI.refreshToken();
-          
-          // Update access token in memory
-          setAccessToken(response.accessToken);
-          
-          set({ isLoading: false });
-          console.log('🔄 Token refresh successful');
-        } catch (error) {
-          console.error('❌ Token refresh failed:', error);
-          
-          // If refresh fails, logout user to clear invalid state
-          await get().logout();
-        }
+        // Firebase handles token refresh automatically
+        console.log('🔄 Firebase handles token refresh automatically');
       },
 
       /**
@@ -259,7 +243,8 @@ export const useAuthStore = create<AuthState>()(
 
       /**
        * Update Profile Action
-       * Updates user profile via API and updates store
+       * For Firebase, this would involve updating the user profile
+       * This is a placeholder implementation
        */
       updateProfile: async (profileData: Partial<User>) => {
         const currentUser = get().user;
@@ -270,16 +255,17 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
 
         try {
-          // Call API to update profile
-          const updatedUser = await authAPI.updateProfile(profileData as any);
+          // In a real implementation, you might update Firebase user profile
+          // and/or sync with your backend database
           
-          // Update store with fresh user data from server
+          // For now, just update local state
+          const updatedUser = { ...currentUser, ...profileData };
           set({
             user: updatedUser,
             isLoading: false,
           });
           
-          console.log('✅ Profile updated successfully');
+          console.log('✅ Profile updated successfully (local only)');
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Profile update failed';
           set({

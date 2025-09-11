@@ -1,7 +1,7 @@
 /**
  * useAuth Hook
  * 
- * Provides a clean, convenient interface for authentication functionality
+ * Provides a clean, convenient interface for Firebase Google authentication functionality
  * Wraps the Zustand authentication store with React hooks patterns
  */
 
@@ -20,8 +20,8 @@ export interface UseAuthReturn {
   error: string | null;
   isInitialized: boolean;
 
-  // Actions
-  login: (credentials: LoginCredentials) => Promise<void>;
+  // Actions - Updated for Firebase Google Auth
+  login: (credentials?: LoginCredentials) => Promise<void>; // Made optional since Firebase Google auth doesn't need credentials
   logout: () => Promise<void>;
   clearError: () => void;
   refreshToken: () => Promise<void>;
@@ -37,16 +37,16 @@ export interface UseAuthReturn {
 /**
  * Main Authentication Hook
  * 
- * Provides complete authentication functionality in a single hook
+ * Provides complete Firebase Google authentication functionality in a single hook
  * 
  * @example
  * ```tsx
  * function LoginForm() {
  *   const { login, isLoading, error, clearError } = useAuth();
  *   
- *   const handleLogin = async (credentials) => {
+ *   const handleGoogleLogin = async () => {
  *     try {
- *       await login(credentials);
+ *       await login(); // No credentials needed for Google auth
  *     } catch (error) {
  *       // Error handling is automatic via the store
  *     }
@@ -133,7 +133,7 @@ export function useUser() {
 /**
  * Authentication Initialization Hook
  * 
- * Handles authentication initialization on app startup
+ * Handles Firebase authentication initialization on app startup
  * Should be called once at the root of the application
  * 
  * @param autoInitialize - Whether to automatically initialize on mount (default: true)
@@ -266,16 +266,16 @@ export function useAuthError(autoClearTimeout: number = 5000) {
 /**
  * Login Hook
  * 
- * Specialized hook for login operations with enhanced state management
+ * Specialized hook for Firebase Google login operations with enhanced state management
  * Provides additional login-specific state and helpers
  */
 export function useLogin() {
   const { login, isLoading, error, clearError, isAuthenticated } = useAuth();
 
-  const performLogin = useCallback(async (credentials: LoginCredentials) => {
+  const performLogin = useCallback(async (credentials?: LoginCredentials) => {
     clearError(); // Clear any previous errors
     try {
-      await login(credentials);
+      await login(credentials); // Firebase Google auth doesn't need credentials
       return { success: true };
     } catch (error) {
       return { 
@@ -297,7 +297,7 @@ export function useLogin() {
 /**
  * Logout Hook
  * 
- * Specialized hook for logout operations
+ * Specialized hook for Firebase logout operations
  * Provides logout-specific state and confirmation handling
  */
 export function useLogout() {
