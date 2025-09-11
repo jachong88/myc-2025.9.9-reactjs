@@ -12,20 +12,11 @@ import { Page } from '../shared/components/Page';
 import { RouteErrorBoundary } from '../shared/components';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import LoginPage from '../features/auth/pages/LoginPage';
+import { UsersListPage } from '../features/users/pages/UsersListPage';
 import { ProtectedRoute, UnauthorizedPage } from '../shared/components/routing';
 import { LogoutModal } from '../shared/components/auth';
 import { useUser } from '../shared/hooks/useAuth';
 
-function UsersPlaceholder() {
-  return (
-    <Page title="Users">
-      <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-        <h2>Users Management</h2>
-        <p>User management features will be implemented in future user stories.</p>
-      </div>
-    </Page>
-  );
-}
 
 function StudiosPlaceholder() {
   return (
@@ -134,7 +125,7 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute requiredRole="admin">
         <RootLayout>
-          <UsersPlaceholder />
+          <UsersListPage />
         </RootLayout>
       </ProtectedRoute>
     ),
