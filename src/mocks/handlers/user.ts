@@ -146,27 +146,34 @@ export const userHandlers = [
     if (simulateError === 'unauthorized') {
       return HttpResponse.json(
         { 
-          success: false, 
-          message: 'Unauthorized access',
-          errorCode: 'UNAUTHORIZED'
-        } as APIResponse<null>, 
+          success: false,
+          requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+          data: null,
+          meta: null,
+          error: {
+            status: 401,
+            code: 'UNAUTHORIZED',
+            message: 'Unauthorized access'
+          }
+        }, 
         { status: 401 }
       );
     }
 
     // Filter and paginate users
     const filteredUsers = filterUsers(mockUsers, searchParams);
-    const paginatedResult = paginateResults(filteredUsers, searchParams.page, searchParams.size);
+    const paginatedResult = paginateResults(filteredUsers, searchParams.page || 0, searchParams.size || 10);
 
     const response: UserListResponse = {
       success: true,
-      message: 'Users retrieved successfully',
-      data: paginatedResult,
+      requestId: `req_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+      data: paginatedResult.users,
+      meta: paginatedResult.meta,
+      error: null,
     };
 
     return HttpResponse.json(response, { 
-      headers: { 'Content-Type': 'application/json' },
-      delay 
+      headers: { 'Content-Type': 'application/json' }
     });
   }),
 

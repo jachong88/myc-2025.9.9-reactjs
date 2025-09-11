@@ -102,48 +102,82 @@ export interface UserListParams {
 // ============================================================================
 
 /**
- * Standard API response wrapper
+ * Standard API response wrapper matching API specification
  * All API responses follow this structure
  */
 export interface ApiResponse<T> {
   success: boolean;
   requestId: string;
-  meta: PaginationMeta | null;
   data: T | null;
-  error: null;
+  meta: object | null;
+  error: {
+    status: number;
+    code: string;
+    message: string;
+    details?: object;
+  } | null;
 }
 
 /**
  * User list API response (GET /users)
+ * Data is a direct array of users, meta contains pagination info
  */
-export interface UserListResponse extends ApiResponse<UserListItem[]> {
-  meta: PaginationMeta;
+export interface UserListResponse {
+  success: true;
+  requestId: string;
   data: UserListItem[];
+  meta: PaginationMeta;
+  error: null;
 }
 
 /**
  * User create API response (POST /users)
  * Backend returns data: null for create operations per API spec
  */
-export interface CreateUserResponse extends ApiResponse<null> {
-  meta: null;
+export interface CreateUserResponse {
+  success: true;
+  requestId: string;
   data: null;
+  meta: null;
+  error: null;
 }
 
 /**
  * User get/update API response (GET /users/{id}, PUT /users/{id})
  */
-export interface UserResponse extends ApiResponse<User> {
+export interface UserResponse {
+  success: true;
+  requestId: string;
+  data: User;
   meta: null;
-  data: User | null;
+  error: null;
 }
 
 /**
  * User delete API response (DELETE /users/{id})
  */
-export interface DeleteUserResponse extends ApiResponse<null> {
-  meta: null;
+export interface DeleteUserResponse {
+  success: true;
+  requestId: string;
   data: null;
+  meta: null;
+  error: null;
+}
+
+/**
+ * Error response format matching API specification
+ */
+export interface UserErrorResponse {
+  success: false;
+  requestId: string;
+  data: null;
+  meta: null;
+  error: {
+    status: number;
+    code: string;
+    message: string;
+    details?: object;
+  };
 }
 
 // ============================================================================

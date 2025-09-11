@@ -25,10 +25,8 @@ export const UserTable: React.FC<UserTableProps> = ({
   const columns: ColumnsType<UserListItem> = [
     {
       title: 'Name',
-      dataIndex: 'firstName',
+      dataIndex: 'name',
       key: 'name',
-      render: (firstName: string, record: UserListItem) => 
-        `${firstName} ${record.lastName}`,
       width: 150,
     },
     {

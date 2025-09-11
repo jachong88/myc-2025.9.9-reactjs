@@ -29,6 +29,7 @@ export const UsersListPage: React.FC = () => {
     filters: {
       page: 0,
       size: 10,
+      deleted: false,
     },
     pagination: {
       page: 0,
@@ -49,12 +50,12 @@ export const UsersListPage: React.FC = () => {
       if (response.success && response.data) {
         setState(prev => ({
           ...prev,
-          users: response.data.users,
-          pagination: response.data.meta,
+          users: response.data,
+          pagination: response.meta,
           loading: false,
         }));
       } else {
-        throw new Error(response.message || 'Failed to fetch users');
+        throw new Error('Failed to fetch users');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch users';
@@ -98,7 +99,7 @@ export const UsersListPage: React.FC = () => {
   // Handle user edit action
   const handleEditUser = useCallback((user: UserListItem) => {
     // TODO: Navigate to edit user page or open edit modal
-    message.info(`Edit user: ${user.firstName} ${user.lastName} (ID: ${user.id})`);
+    message.info(`Edit user: ${user.name} (ID: ${user.id})`);
     console.log('Edit user:', user);
   }, []);
 
