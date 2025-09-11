@@ -18,7 +18,8 @@ dist-ssr
 # Environment files
 .env
 .env.local
-.env.production
+# Note: .env.production is kept as a template
+# Add .env.production.local for sensitive production overrides
 
 # Editor directories and files
 .vscode/*
