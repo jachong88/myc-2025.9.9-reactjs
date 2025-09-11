@@ -11,6 +11,7 @@ import type {
   UserListResponse,
   CreateUserRequest,
   UpdateUserRequest,
+  CreateUserResponse,
   UserResponse,
   DeleteUserResponse,
 } from '../types/user';
@@ -40,11 +41,11 @@ export const userAPI = {
    * POST /users
    * 
    * @param data User creation data
-   * @returns Promise<UserResponse> Created user data
+   * @returns Promise<CreateUserResponse> Create confirmation (data: null)
    */
-  createUser: async (data: CreateUserRequest): Promise<UserResponse> => {
+  createUser: async (data: CreateUserRequest): Promise<CreateUserResponse> => {
     const response = await httpClient.post(BASE_PATH, data);
-    return response.data as UserResponse;
+    return response.data as CreateUserResponse;
   },
 
   /**

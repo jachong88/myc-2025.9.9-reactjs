@@ -1,95 +1,62 @@
 /**
- * User domain types test - verify types compile and work correctly
+ * User types tests - verify current API types compile and work correctly
  */
 
 import { describe, it, expect } from 'vitest';
 import type {
   User,
-  UserWithLocation,
-  UserRole,
-  UserStatus,
+  UserListItem,
   CreateUserRequest,
   UpdateUserRequest,
   UserListParams,
   UserListResponse,
-  Country,
-  Province,
-  UserSummary,
-  UserTableRow,
+  CreateUserResponse,
+  UserResponse,
+  DeleteUserResponse,
+  PaginationMeta,
   UserFormData,
-  UserValidationError
+  UserFilterData,
+  UserTableState,
+  UserSortField,
+  SortOrder
 } from './user';
 
-describe('User Domain Types', () => {
-  it('should create valid User objects', () => {
+describe('User API Types', () => {
+  it('should create valid User objects matching backend structure', () => {
     const user: User = {
-      id: 1,
+      id: '01HF5MCGQJKX2QYV9C8GZ3JBFW',
       name: 'John Doe',
       email: 'john@example.com',
       phone: '+1-234-567-8900',
-      role: 'student',
-      status: 'active',
-      country_id: 1,
-      province_id: 10,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z'
+      countryId: '01HF5MCGQJKX2QYV9C8GZ3JBFX',
+      provinceId: '01HF5MCGQJKX2QYV9C8GZ3JBFY',
+      roleId: '01HF5MCGQJKX2QYV9C8GZ3JBFZ',
+      note: 'Test user'
     };
 
-    expect(user.id).toBe(1);
+    expect(user.id).toBe('01HF5MCGQJKX2QYV9C8GZ3JBFW');
     expect(user.name).toBe('John Doe');
-    expect(user.role).toBe('student');
-    expect(user.status).toBe('active');
+    expect(user.email).toBe('john@example.com');
+    expect(user.phone).toBe('+1-234-567-8900');
   });
 
-  it('should create valid UserWithLocation objects', () => {
-    const country: Country = {
-      id: 1,
-      name: 'Canada',
-      code: 'CA'
-    };
-
-    const province: Province = {
-      id: 10,
-      name: 'Ontario',
-      code: 'ON',
-      country_id: 1
-    };
-
-    const userWithLocation: UserWithLocation = {
-      id: 1,
+  it('should create valid UserListItem objects from API response', () => {
+    const userListItem: UserListItem = {
+      id: '01HF5MCGQJKX2QYV9C8GZ3JBFW',
       name: 'Jane Smith',
       email: 'jane@example.com',
       phone: null,
-      role: 'instructor',
-      status: 'active',
-      country_id: 1,
-      province_id: 10,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-      country,
-      province
+      role: 'Teacher',
+      country: 'Canada',
+      province: 'Ontario',
+      note: null
     };
 
-    expect(userWithLocation.country?.name).toBe('Canada');
-    expect(userWithLocation.province?.name).toBe('Ontario');
-  });
-
-  it('should validate UserRole types', () => {
-    const validRoles: UserRole[] = ['admin', 'manager', 'instructor', 'student'];
-    
-    validRoles.forEach(role => {
-      const user: Partial<User> = { role };
-      expect(['admin', 'manager', 'instructor', 'student']).toContain(user.role);
-    });
-  });
-
-  it('should validate UserStatus types', () => {
-    const validStatuses: UserStatus[] = ['active', 'inactive', 'pending'];
-    
-    validStatuses.forEach(status => {
-      const user: Partial<User> = { status };
-      expect(['active', 'inactive', 'pending']).toContain(user.status);
-    });
+    expect(userListItem.id).toBe('01HF5MCGQJKX2QYV9C8GZ3JBFW');
+    expect(userListItem.name).toBe('Jane Smith');
+    expect(userListItem.role).toBe('Teacher');
+    expect(userListItem.country).toBe('Canada');
+    expect(userListItem.province).toBe('Ontario');
   });
 
   it('should create valid CreateUserRequest objects', () => {
@@ -97,95 +64,92 @@ describe('User Domain Types', () => {
       name: 'New User',
       email: 'newuser@example.com',
       phone: '+1-555-0123',
-      role: 'student',
-      status: 'pending',
-      country_id: 1,
-      province_id: 10
+      roleId: '01HF5MCGQJKX2QYV9C8GZ3JBFZ',
+      countryId: '01HF5MCGQJKX2QYV9C8GZ3JBFX',
+      provinceId: '01HF5MCGQJKX2QYV9C8GZ3JBFY',
+      note: 'New user note'
     };
 
     expect(createRequest.name).toBe('New User');
     expect(createRequest.email).toBe('newuser@example.com');
-    expect(createRequest.role).toBe('student');
-    expect(createRequest.status).toBe('pending');
+    expect(createRequest.roleId).toBe('01HF5MCGQJKX2QYV9C8GZ3JBFZ');
   });
 
   it('should create valid UpdateUserRequest objects', () => {
     const updateRequest: UpdateUserRequest = {
       name: 'Updated Name',
-      status: 'active'
-      // All other fields are optional
+      email: 'updated@example.com',
+      roleId: '01HF5MCGQJKX2QYV9C8GZ3JBFZ',
+      countryId: '01HF5MCGQJKX2QYV9C8GZ3JBFX',
+      provinceId: '01HF5MCGQJKX2QYV9C8GZ3JBFY'
+      // phone and note are optional
     };
 
     expect(updateRequest.name).toBe('Updated Name');
-    expect(updateRequest.status).toBe('active');
-    expect(updateRequest.email).toBeUndefined();
+    expect(updateRequest.email).toBe('updated@example.com');
+    expect(updateRequest.phone).toBeUndefined();
   });
 
   it('should create valid UserListParams objects', () => {
     const listParams: UserListParams = {
       page: 1,
-      per_page: 20,
-      sort: 'name',
-      order: 'asc',
-      role: ['student', 'instructor'],
-      status: 'active',
-      search: 'john',
-      country_id: 1
+      size: 20,
+      name: 'john',
+      countryId: '01HF5MCGQJKX2QYV9C8GZ3JBFX',
+      deleted: false
     };
 
     expect(listParams.page).toBe(1);
-    expect(listParams.per_page).toBe(20);
-    expect(listParams.role).toEqual(['student', 'instructor']);
-    expect(Array.isArray(listParams.role)).toBe(true);
+    expect(listParams.size).toBe(20);
+    expect(listParams.deleted).toBe(false);
+  });
+
+  it('should create valid PaginationMeta objects', () => {
+    const meta: PaginationMeta = {
+      page: 0,
+      size: 10,
+      totalItems: 100,
+      totalPages: 10,
+      hasNext: true
+    };
+
+    expect(meta.page).toBe(0);
+    expect(meta.totalItems).toBe(100);
+    expect(meta.hasNext).toBe(true);
   });
 
   it('should create valid UserListResponse objects', () => {
     const response: UserListResponse = {
+      success: true,
+      requestId: 'req-123',
+      meta: {
+        page: 0,
+        size: 10,
+        totalItems: 0,
+        totalPages: 0,
+        hasNext: false
+      },
       data: [],
-      total: 0,
-      page: 1,
-      per_page: 20,
-      total_pages: 0,
-      has_next: false,
-      has_prev: false
+      error: null
     };
 
+    expect(response.success).toBe(true);
     expect(response.data).toEqual([]);
-    expect(response.total).toBe(0);
-    expect(response.has_next).toBe(false);
+    expect(response.meta.hasNext).toBe(false);
   });
 
-  it('should create valid UserSummary objects', () => {
-    const summary: UserSummary = {
-      id: 1,
-      name: 'Summary User',
-      email: 'summary@example.com',
-      role: 'manager',
-      status: 'active'
+  it('should create valid CreateUserResponse objects', () => {
+    const response: CreateUserResponse = {
+      success: true,
+      requestId: 'req-456',
+      meta: null,
+      data: null,
+      error: null
     };
 
-    expect(summary.id).toBe(1);
-    expect(summary.name).toBe('Summary User');
-    expect(summary.role).toBe('manager');
-  });
-
-  it('should create valid UserTableRow objects', () => {
-    const tableRow: UserTableRow = {
-      id: 1,
-      name: 'Table User',
-      email: 'table@example.com',
-      role: 'admin',
-      status: 'active',
-      phone: '+1-555-0199',
-      country_name: 'Canada',
-      province_name: 'Ontario',
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z'
-    };
-
-    expect(tableRow.id).toBe(1);
-    expect(tableRow.country_name).toBe('Canada');
-    expect(tableRow.province_name).toBe('Ontario');
+    expect(response.success).toBe(true);
+    expect(response.data).toBeNull();
+    expect(response.meta).toBeNull();
   });
 
   it('should create valid UserFormData objects', () => {
@@ -193,26 +157,57 @@ describe('User Domain Types', () => {
       name: 'Form User',
       email: 'form@example.com',
       phone: '+1-555-0155',
-      role: 'student',
-      status: 'pending',
-      country_id: 1,
-      province_id: 10
+      roleId: '01HF5MCGQJKX2QYV9C8GZ3JBFZ',
+      countryId: '01HF5MCGQJKX2QYV9C8GZ3JBFX',
+      provinceId: '01HF5MCGQJKX2QYV9C8GZ3JBFY',
+      note: 'Form note'
     };
 
     expect(formData.name).toBe('Form User');
-    expect(formData.status).toBe('pending');
-    expect(formData.role).toBe('student');
+    expect(formData.roleId).toBe('01HF5MCGQJKX2QYV9C8GZ3JBFZ');
   });
 
-  it('should create valid UserValidationError objects', () => {
-    const validationError: UserValidationError = {
-      field: 'email',
-      message: 'Email is required',
-      code: 'REQUIRED'
+  it('should create valid UserFilterData objects', () => {
+    const filterData: UserFilterData = {
+      page: 0,
+      size: 10,
+      name: 'john',
+      email: 'john@',
+      deleted: false
     };
 
-    expect(validationError.field).toBe('email');
-    expect(validationError.message).toBe('Email is required');
-    expect(validationError.code).toBe('REQUIRED');
+    expect(filterData.deleted).toBe(false);
+    expect(filterData.name).toBe('john');
+  });
+
+  it('should create valid UserTableState objects', () => {
+    const tableState: UserTableState = {
+      selectedUsers: ['01HF5MCGQJKX2QYV9C8GZ3JBFW'],
+      sortField: 'name',
+      sortOrder: 'asc',
+      filters: {
+        deleted: false
+      }
+    };
+
+    expect(tableState.selectedUsers).toEqual(['01HF5MCGQJKX2QYV9C8GZ3JBFW']);
+    expect(tableState.sortField).toBe('name');
+    expect(tableState.sortOrder).toBe('asc');
+  });
+
+  it('should validate UserSortField types', () => {
+    const validSortFields: UserSortField[] = ['name', 'email', 'role', 'country', 'province'];
+    
+    validSortFields.forEach(field => {
+      expect(['name', 'email', 'role', 'country', 'province']).toContain(field);
+    });
+  });
+
+  it('should validate SortOrder types', () => {
+    const validOrders: SortOrder[] = ['asc', 'desc'];
+    
+    validOrders.forEach(order => {
+      expect(['asc', 'desc']).toContain(order);
+    });
   });
 });

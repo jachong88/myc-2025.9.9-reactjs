@@ -1,6 +1,6 @@
 /**
  * User Types for MYC Studio Management System
- * Based on exact API documentation from docs/common/api/user/
+ * Based on exact API documentation and backend DTOs
  */
 
 // ============================================================================
@@ -9,30 +9,32 @@
 
 /**
  * User list item from API response (GET /users)
- * Matches the exact structure from docs/common/api/user/user-list.md
+ * Matches UserListItemResponse from backend
  */
 export interface UserListItem {
-  id: string; // ULID format
+  id: string;        // ULID format
   name: string;
   email: string;
-  phone?: string;
+  phone: string | null;
   role: string;      // resolved role name
-  country: string;   // resolved country name
+  country: string;   // resolved country name  
   province: string;  // resolved province name
+  note: string | null;
 }
 
 /**
- * User entity from API response (GET /users/{id})
- * Matches the exact structure from docs/common/api/user/user-get.md
+ * User entity from API response (for individual user operations)
+ * Matches User entity structure from backend
  */
 export interface User {
+  id: string;         // ULID
+  countryId: string;  // ULID
+  provinceId: string; // ULID
+  roleId: string;     // ULID
   name: string;
   email: string;
-  phone?: string;
-  role_id: string;    // ULID
-  country_id: string; // ULID
-  province_id: string; // ULID
-  note?: string;
+  phone: string | null;
+  note: string | null;
 }
 
 /**
@@ -120,7 +122,16 @@ export interface UserListResponse extends ApiResponse<UserListItem[]> {
 }
 
 /**
- * User CRUD API response (GET /users/{id}, POST /users, PUT /users/{id})
+ * User create API response (POST /users)
+ * Backend returns data: null for create operations per API spec
+ */
+export interface CreateUserResponse extends ApiResponse<null> {
+  meta: null;
+  data: null;
+}
+
+/**
+ * User get/update API response (GET /users/{id}, PUT /users/{id})
  */
 export interface UserResponse extends ApiResponse<User> {
   meta: null;
@@ -142,7 +153,7 @@ export interface DeleteUserResponse extends ApiResponse<null> {
 /**
  * Fields that can be used for user sorting
  */
-export type UserSortField = 'name' | 'email' | 'created_at' | 'updated_at';
+export type UserSortField = 'name' | 'email' | 'role' | 'country' | 'province';
 
 /**
  * Sort order options
@@ -150,99 +161,59 @@ export type UserSortField = 'name' | 'email' | 'created_at' | 'updated_at';
 export type SortOrder = 'asc' | 'desc';
 
 /**
- * User creation form data (before submission)
+ * User form data for creating/editing users
  */
-export type UserFormData = Omit<CreateUserRequest, 'status'> & {
-  status: UserStatus;
-};
+export interface UserFormData {
+  name: string;
+  email: string;
+  phone?: string;
+  roleId: string;
+  countryId: string;
+  provinceId: string;
+  note?: string;
+}
 
 /**
- * User update form data (all fields optional)
+ * User filter form data
  */
-export type UserUpdateFormData = Partial<UserFormData>;
-
-/**
- * User table row data for displaying in lists
- */
-export interface UserTableRow extends UserSummary {
-  phone: string | null;
-  country_name: string | null;
-  province_name: string | null;
-  created_at: string;
-  updated_at: string;
+export interface UserFilterData {
+  page?: number;
+  size?: number;
+  name?: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  countryId?: string;
+  provinceId?: string;
+  deleted: boolean;
 }
 
 // ============================================================================
-// Validation Types
+// Form State Types
 // ============================================================================
 
 /**
- * User field validation constraints
+ * User table state for managing list display
  */
-export interface UserValidationRules {
-  name: {
-    required: true;
-    minLength: number;
-    maxLength: number;
-  };
-  email: {
-    required: true;
-    format: 'email';
-    maxLength: number;
-  };
-  phone: {
-    required: false;
-    format?: 'phone';
-    maxLength: number;
-  };
-  role: {
-    required: true;
-    enum: UserRole[];
-  };
-  status: {
-    required: true;
-    enum: UserStatus[];
-  };
+export interface UserTableState {
+  selectedUsers: string[]; // Array of user IDs
+  sortField: UserSortField;
+  sortOrder: SortOrder;
+  filters: UserFilterData;
 }
 
 /**
- * User validation error structure
+ * User list loading states
  */
-export interface UserValidationError {
-  field: keyof CreateUserRequest | keyof UpdateUserRequest;
-  message: string;
-  code: string;
-}
-
-// ============================================================================
-// Business Logic Types
-// ============================================================================
+export type UserListLoadingState = 'idle' | 'loading' | 'error' | 'success';
 
 /**
- * User permissions based on role
+ * User operation loading states
  */
-export interface UserPermissions {
-  canViewUsers: boolean;
-  canCreateUsers: boolean;
-  canEditUsers: boolean;
-  canDeleteUsers: boolean;
-  canManageRoles: boolean;
-  canViewReports: boolean;
-}
-
-/**
- * User activity status
- */
-export interface UserActivity {
-  isOnline: boolean;
-  lastSeen: string | null; // ISO timestamp
-  currentSession: string | null; // Session ID
-}
-
-/**
- * Complete user profile including activity and permissions
- */
-export interface UserProfile extends UserWithLocation {
-  permissions: UserPermissions;
-  activity: UserActivity;
+export interface UserOperationState {
+  creating: boolean;
+  updating: boolean;
+  deleting: boolean;
+  loading: boolean;
+  error: string | null;
 }
