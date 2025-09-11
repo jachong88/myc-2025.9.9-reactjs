@@ -35,7 +35,7 @@ describe('Typography Components', () => {
       );
       
       const title = screen.getByRole('heading', { level: 2 });
-      expect(title).toHaveStyle({ color: 'red' });
+      expect(title).toHaveStyle({ color: 'rgb(255, 0, 0)' });
     });
   });
 
@@ -74,7 +74,7 @@ describe('Typography Components', () => {
       
       const text = screen.getByText('Strong text');
       expect(text).toBeInTheDocument();
-      expect(text).toHaveStyle({ fontWeight: 'bold' });
+      expect(text).toHaveStyle({ fontWeight: '600' }); // Ant Design uses numeric font weights
     });
   });
 
@@ -88,7 +88,7 @@ describe('Typography Components', () => {
       
       const text = screen.getByText('Muted text');
       expect(text).toBeInTheDocument();
-      expect(text).toHaveClass('ant-typography-caption');
+      expect(text).toHaveClass('ant-typography-secondary'); // Ant Design v5 uses -secondary instead of -caption
     });
 
     it('should have muted text color', () => {

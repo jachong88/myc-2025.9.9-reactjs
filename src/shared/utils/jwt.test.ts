@@ -1,10 +1,10 @@
 /**
- * Basic JWT Utilities Test
+ * JWT Utilities Test Suite
  * 
- * Simple test to verify JWT utilities are working correctly
- * This will be expanded in EP-002-US-05 with comprehensive testing
+ * Comprehensive tests for JWT utilities functionality
  */
 
+import { describe, it, expect, beforeEach } from 'vitest';
 import { 
   decodeToken, 
   isTokenExpired, 
@@ -19,35 +19,97 @@ import {
 // Payload: {"sub":"user123","email":"test@example.com","roles":["user"],"iat":1600000000,"exp":1600003600}
 const SAMPLE_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwicm9sZXMiOlsidXNlciJdLCJpYXQiOjE2MDAwMDAwMDAsImV4cCI6MTYwMDAwMzYwMH0.f1nLxU5_JF8TjU8x0q3g_GfC7Qm1BHJ8FH7yKqO_5QM';
 
-// Run basic tests
-console.log('🧪 Testing JWT Utilities...');
+// Invalid token for testing
+const INVALID_TOKEN = 'invalid.jwt.token';
 
-// Test 1: Token Decoding
-const decoded = decodeToken(SAMPLE_TOKEN);
-console.log('✅ Token decoded:', decoded);
+describe('JWT Utilities', () => {
+  beforeEach(() => {
+    // Clear tokens before each test
+    clearTokens();
+  });
 
-// Test 2: Token Expiry Check (should be expired since it's from 2020)
-const expired = isTokenExpired(SAMPLE_TOKEN);
-console.log('✅ Token expired check:', expired);
+  describe('decodeToken', () => {
+    it('should decode a valid JWT token', () => {
+      const decoded = decodeToken(SAMPLE_TOKEN);
+      
+      expect(decoded).toBeTruthy();
+      expect(decoded?.sub).toBe('user123');
+      expect(decoded?.email).toBe('test@example.com');
+      expect(decoded?.roles).toEqual(['user']);
+      expect(decoded?.iat).toBe(1600000000);
+      expect(decoded?.exp).toBe(1600003600);
+    });
 
-// Test 3: Token Storage
-setAccessToken(SAMPLE_TOKEN);
-const retrieved = getAccessToken();
-console.log('✅ Token storage works:', retrieved === SAMPLE_TOKEN);
+    it('should return null for invalid token', () => {
+      const decoded = decodeToken(INVALID_TOKEN);
+      expect(decoded).toBeNull();
+    });
 
-// Test 4: Token Clear
-clearTokens();
-const clearedToken = getAccessToken();
-console.log('✅ Token clearing works:', clearedToken === null);
+    it('should return null for empty token', () => {
+      const decoded = decodeToken('');
+      expect(decoded).toBeNull();
+    });
+  });
 
-// Test 5: Expiry time
-const expiryMs = getTokenExpiryMs(SAMPLE_TOKEN);
-console.log('✅ Token expiry time:', new Date(expiryMs || 0).toISOString());
+  describe('isTokenExpired', () => {
+    it('should return true for expired token', () => {
+      const expired = isTokenExpired(SAMPLE_TOKEN);
+      expect(expired).toBe(true);
+    });
 
-// Test 6: Seconds until expiry
-const secondsLeft = secondsUntilExpiry(SAMPLE_TOKEN);
-console.log('✅ Seconds until expiry:', secondsLeft);
+    it('should return true for invalid token', () => {
+      const expired = isTokenExpired(INVALID_TOKEN);
+      expect(expired).toBe(true);
+    });
 
-console.log('🎉 JWT Utilities basic test completed!');
+    it('should return true for empty token', () => {
+      const expired = isTokenExpired('');
+      expect(expired).toBe(true);
+    });
+  });
 
-export {}; // Make this a module
+  describe('token storage', () => {
+    it('should store and retrieve access token', () => {
+      setAccessToken(SAMPLE_TOKEN);
+      const retrieved = getAccessToken();
+      expect(retrieved).toBe(SAMPLE_TOKEN);
+    });
+
+    it('should return null when no token is stored', () => {
+      const token = getAccessToken();
+      expect(token).toBeNull();
+    });
+
+    it('should clear tokens', () => {
+      setAccessToken(SAMPLE_TOKEN);
+      expect(getAccessToken()).toBe(SAMPLE_TOKEN);
+      
+      clearTokens();
+      expect(getAccessToken()).toBeNull();
+    });
+  });
+
+  describe('getTokenExpiryMs', () => {
+    it('should return expiry time in milliseconds', () => {
+      const expiryMs = getTokenExpiryMs(SAMPLE_TOKEN);
+      expect(expiryMs).toBe(1600003600 * 1000); // exp * 1000
+    });
+
+    it('should return null for invalid token', () => {
+      const expiryMs = getTokenExpiryMs(INVALID_TOKEN);
+      expect(expiryMs).toBeNull();
+    });
+  });
+
+  describe('secondsUntilExpiry', () => {
+    it('should return 0 for expired token', () => {
+      const secondsLeft = secondsUntilExpiry(SAMPLE_TOKEN);
+      expect(secondsLeft).toBe(0);
+    });
+
+    it('should return null for invalid token', () => {
+      const secondsLeft = secondsUntilExpiry(INVALID_TOKEN);
+      expect(secondsLeft).toBeNull();
+    });
+  });
+});

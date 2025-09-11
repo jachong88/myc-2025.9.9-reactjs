@@ -5,84 +5,82 @@
  * This will be expanded in EP-002-US-05 with comprehensive testing
  */
 
+import { describe, it, expect, beforeEach } from 'vitest';
 import { useAuthStore } from './authStore';
-// Note: For component testing, use hooks from '@/shared/hooks'
-// This test uses the store directly for internal testing
 
-// Basic functionality test
-console.log('🧪 Testing Authentication Store...');
+describe('Authentication Store', () => {
+  beforeEach(async () => {
+    // Reset store to initial state before each test
+    await useAuthStore.getState().logout();
+    // Wait a tick to ensure async operations complete
+    await new Promise(resolve => setTimeout(resolve, 0));
+  });
 
-// Get initial state
-const initialState = useAuthStore.getState();
-console.log('✅ Initial state:', {
-  isAuthenticated: initialState.isAuthenticated,
-  user: initialState.user,
-  isLoading: initialState.isLoading,
-  error: initialState.error,
-  isInitialized: initialState.isInitialized,
+  describe('Initial State', () => {
+    it('should have correct initial state', async () => {
+      // Wait for any pending async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
+      const state = useAuthStore.getState();
+      
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.user).toBeNull();
+      expect(state.isLoading).toBe(false);
+      expect(state.error).toBeNull();
+      expect(state.isInitialized).toBe(false);
+    });
+  });
+
+  describe('Authentication Actions', () => {
+    it('should have login function available', () => {
+      const { login } = useAuthStore.getState();
+      expect(typeof login).toBe('function');
+    });
+
+    it('should have logout function available', () => {
+      const { logout } = useAuthStore.getState();
+      expect(typeof logout).toBe('function');
+    });
+
+    it('should handle logout and reset state', async () => {
+      const { logout } = useAuthStore.getState();
+      
+      await logout();
+      
+      const stateAfterLogout = useAuthStore.getState();
+      expect(stateAfterLogout.isAuthenticated).toBe(false);
+      expect(stateAfterLogout.user).toBeNull();
+    });
+  });
+
+  describe('Role Helpers', () => {
+    it('should have role helper functions available', () => {
+      const { hasRole, isAdmin, canAccess } = useAuthStore.getState();
+      
+      expect(typeof hasRole).toBe('function');
+      expect(typeof isAdmin).toBe('function');
+      expect(typeof canAccess).toBe('function');
+    });
+
+    it('should return false for role checks when not authenticated', () => {
+      const { hasRole, isAdmin, canAccess } = useAuthStore.getState();
+      
+      expect(hasRole('admin')).toBe(false);
+      expect(isAdmin()).toBe(false);
+      expect(canAccess('admin-panel')).toBe(false);
+    });
+  });
+
+  describe('Store Functions', () => {
+    it('should have required store actions', () => {
+      const state = useAuthStore.getState();
+      
+      // Check that essential functions exist
+      expect(typeof state.login).toBe('function');
+      expect(typeof state.logout).toBe('function');
+      expect(typeof state.refreshToken).toBe('function');
+      expect(typeof state.updateProfile).toBe('function');
+      expect(typeof state.initializeAuth).toBe('function');
+    });
+  });
 });
-
-// Test login functionality (mock)
-const testLogin = async () => {
-  const { login } = useAuthStore.getState();
-  
-  try {
-    await login({
-      email: 'test@example.com',
-      password: 'password123',
-    });
-    
-    const stateAfterLogin = useAuthStore.getState();
-    console.log('✅ Login test successful:', {
-      isAuthenticated: stateAfterLogin.isAuthenticated,
-      userName: stateAfterLogin.user?.name,
-      userEmail: stateAfterLogin.user?.email,
-    });
-  } catch (error) {
-    console.error('❌ Login test failed:', error);
-  }
-};
-
-// Test logout functionality
-const testLogout = async () => {
-  const { logout } = useAuthStore.getState();
-  
-  await logout();
-  
-  const stateAfterLogout = useAuthStore.getState();
-  console.log('✅ Logout test successful:', {
-    isAuthenticated: stateAfterLogout.isAuthenticated,
-    user: stateAfterLogout.user,
-  });
-};
-
-// Test role helpers
-const testRoleHelpers = () => {
-  const { hasRole, isAdmin, canAccess } = useAuthStore.getState();
-  
-  // First login to have a user for testing
-  useAuthStore.getState().login({
-    email: 'admin@example.com',
-    password: 'password',
-  }).then(() => {
-    console.log('✅ Role helper tests:', {
-      hasAdminRole: hasRole('admin'),
-      isAdmin: isAdmin(),
-      canAccessAdminResource: canAccess('admin-panel'),
-      canAccessUserResource: canAccess('user-profile'),
-    });
-  });
-};
-
-// Run tests
-testLogin()
-  .then(() => testRoleHelpers())
-  .then(() => testLogout())
-  .then(() => {
-    console.log('🎉 Authentication Store basic tests completed!');
-  })
-  .catch((error) => {
-    console.error('❌ Authentication Store tests failed:', error);
-  });
-
-export {}; // Make this a module

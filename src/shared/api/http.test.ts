@@ -5,81 +5,54 @@
  * Verifies automatic token attachment and error handling
  */
 
+import { describe, it, expect } from 'vitest';
 import { httpClient } from './http';
-import { setAccessToken, clearTokens } from '../utils/jwt';
+import { setAccessToken, getAccessToken, clearTokens } from '../utils/jwt';
 
-console.log('🧪 Testing HTTP Client Authentication Integration...');
-
-// Test 1: Request without token
-console.log('Test 1: Request without token');
-try {
-  // This should not include Authorization header
-  const config = httpClient.defaults;
-  console.log('✅ HTTP client configured successfully');
-} catch (error) {
-  console.error('❌ HTTP client configuration failed:', error);
-}
-
-// Test 2: Set token and verify it's attached to requests
-console.log('Test 2: Request with valid token');
-try {
-  // Set a mock token
-  setAccessToken('mock.jwt.token.for.testing');
-  
-  // Create a request config (simulated - in real usage this would be an actual request)
-  const mockRequest = {
-    url: '/test',
-    method: 'GET',
-    headers: {},
-    skipAuth: false,
-  };
-
-  console.log('✅ Token set successfully');
-} catch (error) {
-  console.error('❌ Token attachment test failed:', error);
-}
-
-// Test 3: Test skipAuth functionality
-console.log('Test 3: Request with skipAuth option');
-try {
-  const mockRequestNoAuth = {
-    url: '/public',
-    method: 'GET', 
-    headers: {},
-    skipAuth: true,
-  };
-
-  console.log('✅ skipAuth configuration works');
-} catch (error) {
-  console.error('❌ skipAuth test failed:', error);
-}
-
-// Test 4: Clear tokens
-console.log('Test 4: Clear tokens');
-try {
-  clearTokens();
-  console.log('✅ Tokens cleared successfully');
-} catch (error) {
-  console.error('❌ Token clearing failed:', error);
-}
-
-// Test 5: Verify HTTP client configuration
-console.log('Test 5: HTTP client configuration validation');
-try {
-  const baseURL = httpClient.defaults.baseURL;
-  const timeout = httpClient.defaults.timeout;
-  
-  console.log('✅ HTTP Client Configuration:', {
-    baseURL,
-    timeout,
-    // Interceptor presence (not accessing internal handlers)
-    hasRequestInterceptors: typeof httpClient.interceptors.request.use === 'function',
-    hasResponseInterceptors: typeof httpClient.interceptors.response.use === 'function',
+describe('HTTP Client Authentication Integration', () => {
+  it('should have HTTP client configured with defaults', () => {
+    expect(httpClient.defaults).toBeDefined();
+    expect(httpClient.defaults.baseURL).toBeDefined();
+    expect(httpClient.defaults.timeout).toBeDefined();
   });
-} catch (error) {
-  console.error('❌ HTTP client validation failed:', error);
-}
 
-console.log('🎉 HTTP Client Authentication Integration tests completed!');
+  it('should handle token storage and retrieval', () => {
+    // Clear any existing tokens
+    clearTokens();
+    expect(getAccessToken()).toBeNull();
 
-export {}; // Make this a module
+    // Set a mock token
+    const mockToken = 'mock.jwt.token.for.testing';
+    setAccessToken(mockToken);
+    expect(getAccessToken()).toBe(mockToken);
+  });
+
+  it('should handle token clearing', () => {
+    // Set a token first
+    setAccessToken('test.token');
+    expect(getAccessToken()).toBe('test.token');
+
+    // Clear tokens
+    clearTokens();
+    expect(getAccessToken()).toBeNull();
+  });
+
+  it('should have request and response interceptors configured', () => {
+    expect(typeof httpClient.interceptors.request.use).toBe('function');
+    expect(typeof httpClient.interceptors.response.use).toBe('function');
+  });
+
+  it('should have proper HTTP client configuration', () => {
+    const config = {
+      baseURL: httpClient.defaults.baseURL,
+      timeout: httpClient.defaults.timeout,
+      hasRequestInterceptors: typeof httpClient.interceptors.request.use === 'function',
+      hasResponseInterceptors: typeof httpClient.interceptors.response.use === 'function',
+    };
+
+    expect(config.baseURL).toBeDefined();
+    expect(config.timeout).toBeDefined();
+    expect(config.hasRequestInterceptors).toBe(true);
+    expect(config.hasResponseInterceptors).toBe(true);
+  });
+});

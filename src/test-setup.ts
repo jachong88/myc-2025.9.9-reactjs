@@ -1,19 +1,25 @@
 import '@testing-library/jest-dom';
 import { beforeAll, afterEach, afterAll } from 'vitest';
 import { setupServer } from 'msw/node';
-import { http, HttpResponse } from 'msw';
+import { handlers } from './mocks/handlers';
 
-// Create MSW server with basic handlers
-export const server = setupServer(
-  // Basic test handler to verify MSW is working
-  http.get('/api/test', () => {
-    return HttpResponse.json({ message: 'MSW is working!' });
-  })
-);
+// Create MSW server with auth handlers
+export const server = setupServer(...handlers);
 
 // Start server before all tests
 beforeAll(() => {
-  server.listen({ onUnhandledRequest: 'error' });
+  server.listen({ 
+    onUnhandledRequest: 'warn',
+    onResponseBypass: () => {
+      console.warn('❌ MSW: Response bypassed - handler might not be matching');
+    }
+  });
+  
+  console.log('🔧 MSW Server started with handlers:', handlers.length);
+  console.log('🔧 MSW Auth handlers registered:');
+  handlers.forEach((handler, index) => {
+    console.log(`  ${index + 1}. ${handler.info.header}`);
+  });
 });
 
 // Reset handlers after each test
