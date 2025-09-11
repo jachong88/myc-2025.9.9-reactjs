@@ -14,64 +14,54 @@ import type { APIResponse } from '../../shared/types/api';
 // Mock user data for testing
 const mockUsers: UserListItem[] = [
   {
-    id: 1,
+    id: '01234567890123456789012345',
+    name: 'John Doe',
     email: 'john.doe@example.com',
-    firstName: 'John',
-    lastName: 'Doe',
     phone: '+1-555-0101',
     role: 'USER',
     country: 'United States',
     province: 'California',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
+    note: null,
   },
   {
-    id: 2,
+    id: '01234567890123456789012346',
+    name: 'Jane Smith',
     email: 'jane.admin@example.com',
-    firstName: 'Jane',
-    lastName: 'Smith',
     phone: '+1-555-0102',
     role: 'ADMIN',
     country: 'United States',
     province: 'New York',
-    createdAt: '2024-01-16T11:00:00Z',
-    updatedAt: '2024-01-16T11:00:00Z',
+    note: null,
   },
   {
-    id: 3,
+    id: '01234567890123456789012347',
+    name: 'Bob Johnson',
     email: 'bob.moderator@example.com',
-    firstName: 'Bob',
-    lastName: 'Johnson',
     phone: '+1-555-0103',
     role: 'MODERATOR',
     country: 'Canada',
     province: 'Ontario',
-    createdAt: '2024-01-17T12:00:00Z',
-    updatedAt: '2024-01-17T12:00:00Z',
+    note: null,
   },
   {
-    id: 4,
+    id: '01234567890123456789012348',
+    name: 'Alice Williams',
     email: 'alice.user@example.com',
-    firstName: 'Alice',
-    lastName: 'Williams',
     phone: '+1-555-0104',
     role: 'USER',
     country: 'United Kingdom',
     province: 'England',
-    createdAt: '2024-01-18T13:00:00Z',
-    updatedAt: '2024-01-18T13:00:00Z',
+    note: null,
   },
   {
-    id: 5,
+    id: '01234567890123456789012349',
+    name: 'Charlie Brown',
     email: 'charlie.dev@example.com',
-    firstName: 'Charlie',
-    lastName: 'Brown',
     phone: '+1-555-0105',
     role: 'USER',
     country: 'Australia',
     province: 'New South Wales',
-    createdAt: '2024-01-19T14:00:00Z',
-    updatedAt: '2024-01-19T14:00:00Z',
+    note: null,
   },
 ];
 
@@ -83,13 +73,13 @@ function filterUsers(users: UserListItem[], params: UserListParams): UserListIte
       return false;
     }
     
-    // First name filter
-    if (params.firstName && !user.firstName.toLowerCase().includes(params.firstName.toLowerCase())) {
+    // Name filter (matches the 'name' field in UserListItem)
+    if (params.name && !user.name.toLowerCase().includes(params.name.toLowerCase())) {
       return false;
     }
     
-    // Last name filter  
-    if (params.lastName && !user.lastName.toLowerCase().includes(params.lastName.toLowerCase())) {
+    // Phone filter
+    if (params.phone && user.phone && !user.phone.toLowerCase().includes(params.phone.toLowerCase())) {
       return false;
     }
     
@@ -98,15 +88,8 @@ function filterUsers(users: UserListItem[], params: UserListParams): UserListIte
       return false;
     }
     
-    // Country filter
-    if (params.country && user.country !== params.country) {
-      return false;
-    }
-    
-    // Province filter
-    if (params.province && user.province !== params.province) {
-      return false;
-    }
+    // Note: Country and Province filters would need ULID resolution in real implementation
+    // For now, we'll skip these filters in the mock
     
     return true;
   });
@@ -140,11 +123,12 @@ export const userHandlers = [
       page: Number(url.searchParams.get('page')) || 0,
       size: Number(url.searchParams.get('size')) || 10,
       email: url.searchParams.get('email') || undefined,
-      firstName: url.searchParams.get('firstName') || undefined,
-      lastName: url.searchParams.get('lastName') || undefined,
-      role: url.searchParams.get('role') as any || undefined,
-      country: url.searchParams.get('country') || undefined,
-      province: url.searchParams.get('province') || undefined,
+      name: url.searchParams.get('name') || undefined,
+      phone: url.searchParams.get('phone') || undefined,
+      role: url.searchParams.get('role') || undefined,
+      countryId: url.searchParams.get('countryId') || undefined,
+      provinceId: url.searchParams.get('provinceId') || undefined,
+      deleted: url.searchParams.get('deleted') === 'true' || false,
     };
 
     // Simulate network delay

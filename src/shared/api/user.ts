@@ -96,3 +96,8 @@ export const {
   updateUser,
   deleteUser,
 } = userAPI;
+
+/**
+ * Export alias for backward compatibility
+ */
+export const userApi = userAPI;

@@ -16,6 +16,16 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/shared/components/*"],
+      "@/utils/*": ["./src/shared/utils/*"],
+      "@/types/*": ["./src/shared/types/*"],
+      "@/api/*": ["./src/shared/api/*"],
+      "@/stores/*": ["./src/shared/stores/*"],
+      "@/hooks/*": ["./src/shared/hooks/*"]
+    },
 
     /* Linting */
     "strict": true,

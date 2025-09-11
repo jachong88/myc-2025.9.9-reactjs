@@ -9,10 +9,7 @@ export const server = setupServer(...handlers);
 // Start server before all tests
 beforeAll(() => {
   server.listen({ 
-    onUnhandledRequest: 'warn',
-    onResponseBypass: () => {
-      console.warn('❌ MSW: Response bypassed - handler might not be matching');
-    }
+    onUnhandledRequest: 'warn'
   });
   
   console.log('🔧 MSW Server started with handlers:', handlers.length);
