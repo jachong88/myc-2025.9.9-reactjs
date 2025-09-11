@@ -1,209 +1,48 @@
 /**
- * Authentication MSW Handlers
+ * Firebase Authentication MSW Handlers
  * 
- * Mock API handlers for authentication endpoints following the documented API specifications
+ * Mock API handlers for Firebase authentication integration
+ * Authentication is handled by Firebase, these handlers support profile management
  */
 
 import { http, HttpResponse } from 'msw';
-import type { LoginCredentials, AuthResponse, User } from '../../shared/types/domain';
-import { validateCredentials, findUserByEmail } from '../fixtures/users';
-import { generateMockJWT, generateMockRefreshToken, decodeMockJWT, isMockJWTExpired } from '../utils/jwt';
-
-// Store active refresh tokens in memory (for testing)
-const activeRefreshTokens = new Set<string>();
+import type { User } from '../../shared/types/domain';
+import { findUserByEmail, findUserByFirebaseUid, createFirebaseUser } from '../fixtures/users';
 
 /**
- * POST /auth/login - User login
+ * POST /auth/sync-firebase-user - Sync Firebase user to backend
+ * Optional endpoint for syncing Firebase user data with backend
  */
-export const loginHandler = http.post('http://localhost:8080/api/auth/login', async ({ request }) => {
+export const syncFirebaseUserHandler = http.post('http://localhost:8080/api/auth/sync-firebase-user', async ({ request }) => {
   try {
-    const credentials = await request.json() as LoginCredentials;
+    const firebaseUser = await request.json() as {
+      uid: string;
+      email: string;
+      displayName: string;
+    };
     
     // Validate required fields
-    if (!credentials.email || !credentials.password) {
+    if (!firebaseUser.uid || !firebaseUser.email) {
       return HttpResponse.json(
         {
           success: false,
           data: null,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Email and password are required',
-            details: {
-              email: !credentials.email ? ['Email is required'] : [],
-              password: !credentials.password ? ['Password is required'] : []
-            }
+            message: 'Firebase UID and email are required'
           }
         },
         { status: 422 }
       );
     }
 
-    // Validate credentials
-    const user = validateCredentials(credentials.email, credentials.password);
-    
-    if (!user) {
-      return HttpResponse.json(
-        {
-          success: false,
-          data: null,
-          error: {
-            code: 'INVALID_CREDENTIALS',
-            message: 'Invalid email or password'
-          }
-        },
-        { status: 401 }
-      );
-    }
-
-    // Generate tokens
-    const accessToken = generateMockJWT(user, 3600); // 1 hour
-    const refreshToken = generateMockRefreshToken();
-    
-    // Store refresh token
-    activeRefreshTokens.add(refreshToken);
-
-    const authResponse: AuthResponse = {
-      user,
-      accessToken,
-      refreshToken,
-      expiresIn: 3600
-    };
+    // Create or update user based on Firebase data
+    const user = createFirebaseUser(firebaseUser);
 
     return HttpResponse.json(
       {
         success: true,
-        data: authResponse,
-        error: null
-      },
-      { 
-        status: 200,
-        headers: {
-          'Set-Cookie': `refreshToken=${refreshToken}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800` // 7 days
-        }
-      }
-    );
-
-  } catch (error) {
-    return HttpResponse.json(
-      {
-        success: false,
-        data: null,
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'An unexpected error occurred during login'
-        }
-      },
-      { status: 500 }
-    );
-  }
-});
-
-/**
- * POST /auth/logout - User logout
- */
-export const logoutHandler = http.post('http://localhost:8080/api/auth/logout', async ({ request }) => {
-  try {
-    // Get refresh token from cookie or request body
-    const cookies = request.headers.get('cookie') || '';
-    const refreshTokenMatch = cookies.match(/refreshToken=([^;]+)/);
-    const refreshToken = refreshTokenMatch ? refreshTokenMatch[1] : null;
-
-    // Remove refresh token from active tokens
-    if (refreshToken) {
-      activeRefreshTokens.delete(refreshToken);
-    }
-
-    return HttpResponse.json(
-      {
-        success: true,
-        data: { message: 'Logged out successfully' },
-        error: null
-      },
-      { 
-        status: 200,
-        headers: {
-          'Set-Cookie': 'refreshToken=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0' // Clear cookie
-        }
-      }
-    );
-
-  } catch (error) {
-    return HttpResponse.json(
-      {
-        success: false,
-        data: null,
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'An unexpected error occurred during logout'
-        }
-      },
-      { status: 500 }
-    );
-  }
-});
-
-/**
- * POST /auth/refresh - Refresh access token
- */
-export const refreshHandler = http.post('http://localhost:8080/api/auth/refresh', async ({ request }) => {
-  try {
-    // Get refresh token from cookie or request body
-    const cookies = request.headers.get('cookie') || '';
-    const refreshTokenMatch = cookies.match(/refreshToken=([^;]+)/);
-    let refreshToken = refreshTokenMatch ? refreshTokenMatch[1] : null;
-
-    // If not in cookie, try request body
-    if (!refreshToken) {
-      try {
-        const body = await request.json() as { refreshToken?: string };
-        refreshToken = body.refreshToken || null;
-      } catch {
-        // Ignore JSON parse errors
-      }
-    }
-
-    if (!refreshToken || !activeRefreshTokens.has(refreshToken)) {
-      return HttpResponse.json(
-        {
-          success: false,
-          data: null,
-          error: {
-            code: 'INVALID_REFRESH_TOKEN',
-            message: 'Invalid or expired refresh token'
-          }
-        },
-        { status: 401 }
-      );
-    }
-
-    // For this mock, we'll generate a new access token for the admin user
-    // In a real app, you'd decode the refresh token to get user info
-    const user = findUserByEmail('admin@example.com'); // Default for mock
-    
-    if (!user) {
-      return HttpResponse.json(
-        {
-          success: false,
-          data: null,
-          error: {
-            code: 'USER_NOT_FOUND',
-            message: 'User associated with token not found'
-          }
-        },
-        { status: 401 }
-      );
-    }
-
-    // Generate new access token
-    const newAccessToken = generateMockJWT(user, 3600);
-
-    return HttpResponse.json(
-      {
-        success: true,
-        data: {
-          accessToken: newAccessToken,
-          expiresIn: 3600
-        },
+        data: user,
         error: null
       },
       { status: 200 }
@@ -216,7 +55,7 @@ export const refreshHandler = http.post('http://localhost:8080/api/auth/refresh'
         data: null,
         error: {
           code: 'INTERNAL_ERROR',
-          message: 'An unexpected error occurred during token refresh'
+          message: 'An unexpected error occurred during Firebase user sync'
         }
       },
       { status: 500 }
@@ -225,11 +64,12 @@ export const refreshHandler = http.post('http://localhost:8080/api/auth/refresh'
 });
 
 /**
- * GET /auth/me - Get current user profile
+ * GET /auth/me - Get current user profile (Firebase authenticated)
+ * In a real app, this would validate Firebase ID tokens
  */
 export const profileHandler = http.get('http://localhost:8080/api/auth/me', async ({ request }) => {
   try {
-    // Get authorization header
+    // Get authorization header (would contain Firebase ID token in real app)
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
 
@@ -240,46 +80,17 @@ export const profileHandler = http.get('http://localhost:8080/api/auth/me', asyn
           data: null,
           error: {
             code: 'MISSING_TOKEN',
-            message: 'Authorization token is required'
+            message: 'Firebase ID token is required'
           }
         },
         { status: 401 }
       );
     }
 
-    // Validate token
-    if (isMockJWTExpired(token)) {
-      return HttpResponse.json(
-        {
-          success: false,
-          data: null,
-          error: {
-            code: 'TOKEN_EXPIRED',
-            message: 'Access token has expired'
-          }
-        },
-        { status: 401 }
-      );
-    }
-
-    // Decode token to get user info
-    const payload = decodeMockJWT(token);
-    if (!payload || !payload.email) {
-      return HttpResponse.json(
-        {
-          success: false,
-          data: null,
-          error: {
-            code: 'INVALID_TOKEN',
-            message: 'Invalid access token'
-          }
-        },
-        { status: 401 }
-      );
-    }
-
-    // Find user by email from token
-    const user = findUserByEmail(payload.email);
+    // For testing, return a mock user based on the token
+    // In a real app, you'd verify the Firebase ID token
+    const user = findUserByEmail('admin@example.com'); // Mock default user
+    
     if (!user) {
       return HttpResponse.json(
         {
@@ -332,11 +143,14 @@ const optionsHandler = http.options('http://localhost:8080/api/auth/*', () => {
   });
 });
 
-// Export all auth handlers
+// Export all Firebase auth handlers
 export const authHandlers = [
-  loginHandler,
-  logoutHandler,
-  refreshHandler,
+  syncFirebaseUserHandler,
   profileHandler,
   optionsHandler
 ];
+
+// Legacy handlers removed:
+// - loginHandler: Now handled by Firebase signInWithPopup
+// - logoutHandler: Now handled by Firebase signOut
+// - refreshHandler: Now handled automatically by Firebase

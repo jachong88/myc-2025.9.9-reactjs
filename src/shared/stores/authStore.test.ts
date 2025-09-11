@@ -1,14 +1,27 @@
 /**
- * Basic Authentication Store Test
+ * Firebase Authentication Store Test
  * 
- * Simple test to verify auth store functionality
- * This will be expanded in EP-002-US-05 with comprehensive testing
+ * Tests Firebase authentication store functionality
+ * Mocks Firebase authentication for testing
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useAuthStore } from './authStore';
 
-describe('Authentication Store', () => {
+// Mock Firebase auth
+vi.mock('../../config/firebase', () => ({
+  auth: {},
+  googleProvider: {}
+}));
+
+vi.mock('firebase/auth', () => ({
+  signInWithPopup: vi.fn(),
+  signOut: vi.fn(),
+  onAuthStateChanged: vi.fn(),
+  GoogleAuthProvider: vi.fn()
+}));
+
+describe('Firebase Authentication Store', () => {
   beforeEach(async () => {
     // Reset store to initial state before each test
     await useAuthStore.getState().logout();
@@ -31,18 +44,18 @@ describe('Authentication Store', () => {
     });
   });
 
-  describe('Authentication Actions', () => {
-    it('should have login function available', () => {
+  describe('Firebase Authentication Actions', () => {
+    it('should have Firebase login function available (no credentials needed)', () => {
       const { login } = useAuthStore.getState();
       expect(typeof login).toBe('function');
     });
 
-    it('should have logout function available', () => {
+    it('should have Firebase logout function available', () => {
       const { logout } = useAuthStore.getState();
       expect(typeof logout).toBe('function');
     });
 
-    it('should handle logout and reset state', async () => {
+    it('should handle Firebase logout and reset state', async () => {
       const { logout } = useAuthStore.getState();
       
       await logout();
@@ -50,6 +63,13 @@ describe('Authentication Store', () => {
       const stateAfterLogout = useAuthStore.getState();
       expect(stateAfterLogout.isAuthenticated).toBe(false);
       expect(stateAfterLogout.user).toBeNull();
+    });
+
+    it('should accept login without parameters (Firebase Google auth)', async () => {
+      const { login } = useAuthStore.getState();
+      
+      // Should not throw when called without parameters
+      expect(() => login()).not.toThrow();
     });
   });
 
@@ -71,15 +91,23 @@ describe('Authentication Store', () => {
     });
   });
 
-  describe('Store Functions', () => {
-    it('should have required store actions', () => {
+  describe('Firebase Store Functions', () => {
+    it('should have required Firebase store actions', () => {
       const state = useAuthStore.getState();
       
-      // Check that essential functions exist
-      expect(typeof state.login).toBe('function');
-      expect(typeof state.logout).toBe('function');
-      expect(typeof state.refreshToken).toBe('function');
+      // Check that essential Firebase functions exist
+      expect(typeof state.login).toBe('function'); // Firebase Google login
+      expect(typeof state.logout).toBe('function'); // Firebase logout
+      expect(typeof state.refreshToken).toBe('function'); // Compatibility (no-op)
       expect(typeof state.updateProfile).toBe('function');
+      expect(typeof state.initializeAuth).toBe('function'); // Firebase auth state listener
+    });
+
+    it('should have Firebase-specific initialization', () => {
+      const state = useAuthStore.getState();
+      
+      // Firebase authentication should start uninitialized
+      expect(state.isInitialized).toBe(false);
       expect(typeof state.initializeAuth).toBe('function');
     });
   });

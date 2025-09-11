@@ -75,11 +75,12 @@ export const mockUsers: Record<string, User> = {
   }
 };
 
-export const mockCredentials: Record<string, { email: string; password: string }> = {
-  admin: { email: 'admin@example.com', password: 'admin123' },
-  teacher: { email: 'teacher@example.com', password: 'teacher123' },
-  student: { email: 'student@example.com', password: 'student123' },
-  test: { email: 'test@example.com', password: 'password123' } // Generic test user
+// Firebase user mapping (no passwords needed)
+export const mockFirebaseUsers: Record<string, { uid: string; email: string; displayName: string }> = {
+  admin: { uid: 'firebase-uid-admin-001', email: 'admin@example.com', displayName: 'Admin User' },
+  teacher: { uid: 'firebase-uid-teacher-001', email: 'teacher@example.com', displayName: 'Teacher User' },
+  student: { uid: 'firebase-uid-student-001', email: 'student@example.com', displayName: 'Student User' },
+  test: { uid: 'firebase-uid-test-001', email: 'test@example.com', displayName: 'Test User' }
 };
 
 // Helper to find user by email
@@ -88,12 +89,41 @@ export function findUserByEmail(email: string): User | null {
   return userEntry ? userEntry[1] : null;
 }
 
-// Helper to validate credentials
-export function validateCredentials(email: string, password: string): User | null {
-  const credEntry = Object.entries(mockCredentials).find(([_, cred]) => cred.email === email && cred.password === password);
-  if (credEntry) {
-    const userRole = credEntry[0];
+// Helper to find user by Firebase UID
+export function findUserByFirebaseUid(uid: string): User | null {
+  const firebaseEntry = Object.entries(mockFirebaseUsers).find(([_, fbUser]) => fbUser.uid === uid);
+  if (firebaseEntry) {
+    const userRole = firebaseEntry[0];
     return mockUsers[userRole] || null;
   }
   return null;
+}
+
+// Helper to create/update user from Firebase data
+export function createFirebaseUser(firebaseUser: { uid: string; email: string; displayName: string }): User {
+  // Try to find existing user by email
+  let existingUser = findUserByEmail(firebaseUser.email);
+  
+  if (existingUser) {
+    // Update existing user with Firebase data
+    return {
+      ...existingUser,
+      id: firebaseUser.uid, // Use Firebase UID as user ID
+      name: firebaseUser.displayName || existingUser.name,
+      email: firebaseUser.email,
+      updatedAt: new Date().toISOString()
+    };
+  }
+  
+  // Create new user from Firebase data
+  return {
+    id: firebaseUser.uid,
+    name: firebaseUser.displayName || 'User',
+    email: firebaseUser.email,
+    role: 'student', // Default role for new Firebase users
+    status: 'active',
+    deleted: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
 }
