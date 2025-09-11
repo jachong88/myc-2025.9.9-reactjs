@@ -1,164 +1,138 @@
 /**
- * User domain types for the MYC Studio Management System
- * Based on API documentation from docs/common/api/user/
+ * User Types for MYC Studio Management System
+ * Based on exact API documentation from docs/common/api/user/
  */
 
 // ============================================================================
-// Core Domain Types
-// ============================================================================
-
-/**
- * User role enumeration - defines access levels and permissions
- */
-export type UserRole = 'admin' | 'manager' | 'instructor' | 'student';
-
-/**
- * User status enumeration - defines account activation state
- */
-export type UserStatus = 'active' | 'inactive' | 'pending';
-
-// ============================================================================
-// Location Domain Types
+// API Response Types - Matching Exact Backend Format
 // ============================================================================
 
 /**
- * Country reference type
+ * User list item from API response (GET /users)
+ * Matches the exact structure from docs/common/api/user/user-list.md
  */
-export interface Country {
-  id: number;
+export interface UserListItem {
+  id: string; // ULID format
   name: string;
-  code: string; // ISO country code (e.g., 'CA', 'US')
+  email: string;
+  phone?: string;
+  role: string;      // resolved role name
+  country: string;   // resolved country name
+  province: string;  // resolved province name
 }
 
 /**
- * Province/State reference type
- */
-export interface Province {
-  id: number;
-  name: string;
-  code: string; // Province/state code (e.g., 'ON', 'BC', 'CA')
-  country_id: number;
-}
-
-// ============================================================================
-// Core User Domain Types
-// ============================================================================
-
-/**
- * Core User interface representing a complete user entity
+ * User entity from API response (GET /users/{id})
+ * Matches the exact structure from docs/common/api/user/user-get.md
  */
 export interface User {
-  id: number;
   name: string;
   email: string;
-  phone: string | null;
-  role: UserRole;
-  status: UserStatus;
-  country_id: number | null;
-  province_id: number | null;
-  created_at: string; // ISO timestamp
-  updated_at: string; // ISO timestamp
+  phone?: string;
+  role_id: string;    // ULID
+  country_id: string; // ULID
+  province_id: string; // ULID
+  note?: string;
 }
 
 /**
- * User entity with populated location references
+ * Pagination metadata from API responses
+ * Matches the exact structure from docs/common/api/user/user-list.md
  */
-export interface UserWithLocation extends User {
-  country: Country | null;
-  province: Province | null;
-}
-
-/**
- * Minimal user information for lists and references
- */
-export interface UserSummary {
-  id: number;
-  name: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
+export interface PaginationMeta {
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
 }
 
 // ============================================================================
-// API Request Types
+// API Request Types - Matching Exact Backend Format
 // ============================================================================
 
 /**
- * Parameters for creating a new user
+ * Create user request payload (POST /users)
+ * Matches the exact structure from docs/common/api/user/user-add.md
  */
 export interface CreateUserRequest {
   name: string;
   email: string;
-  phone?: string | null;
-  role: UserRole;
-  status?: UserStatus; // Defaults to 'pending' if not specified
-  country_id?: number | null;
-  province_id?: number | null;
+  phone?: string;
+  roleId: string;    // ULID
+  countryId: string; // ULID
+  provinceId: string; // ULID
+  note?: string;
 }
 
 /**
- * Parameters for updating an existing user
+ * Update user request payload (PUT /users/{id})
+ * Matches the exact structure from docs/common/api/user/user-update.md
  */
 export interface UpdateUserRequest {
-  name?: string;
-  email?: string;
-  phone?: string | null;
-  role?: UserRole;
-  status?: UserStatus;
-  country_id?: number | null;
-  province_id?: number | null;
+  name: string;
+  email: string;
+  phone?: string;
+  roleId: string;    // ULID
+  countryId: string; // ULID
+  provinceId: string; // ULID
+  note?: string;
 }
 
 /**
- * Parameters for user list/search queries
+ * User list API parameters (GET /users)
+ * Matches the exact parameters from docs/common/api/user/user-list.md
  */
 export interface UserListParams {
-  page?: number;
-  per_page?: number;
-  sort?: 'name' | 'email' | 'created_at' | 'updated_at';
-  order?: 'asc' | 'desc';
-  role?: UserRole | UserRole[];
-  status?: UserStatus | UserStatus[];
-  search?: string; // Search in name and email
-  country_id?: number;
-  province_id?: number;
+  page?: number;        // Page number (default 0)
+  size?: number;        // Page size (default 10)
+  countryId?: string;   // Country ULID filter
+  provinceId?: string;  // Province ULID filter
+  name?: string;        // Name filter
+  phone?: string;       // Phone filter
+  email?: string;       // Email filter
+  role?: string;        // Role filter
+  deleted: boolean;     // Required: show deleted users
 }
 
 // ============================================================================
-// API Response Types
+// API Response Wrappers - Matching Exact Backend Format
 // ============================================================================
 
 /**
- * Standard paginated response structure
+ * Standard API response wrapper
+ * All API responses follow this structure
  */
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  per_page: number;
-  total_pages: number;
-  has_next: boolean;
-  has_prev: boolean;
-}
-
-/**
- * Response for user list endpoint
- */
-export interface UserListResponse extends PaginatedResponse<UserWithLocation> {}
-
-/**
- * Response for single user endpoints (get, create, update)
- */
-export interface UserResponse {
-  data: UserWithLocation;
-}
-
-/**
- * Response for user deletion
- */
-export interface UserDeleteResponse {
+export interface ApiResponse<T> {
   success: boolean;
-  message: string;
+  requestId: string;
+  meta: PaginationMeta | null;
+  data: T | null;
+  error: null;
+}
+
+/**
+ * User list API response (GET /users)
+ */
+export interface UserListResponse extends ApiResponse<UserListItem[]> {
+  meta: PaginationMeta;
+  data: UserListItem[];
+}
+
+/**
+ * User CRUD API response (GET /users/{id}, POST /users, PUT /users/{id})
+ */
+export interface UserResponse extends ApiResponse<User> {
+  meta: null;
+  data: User | null;
+}
+
+/**
+ * User delete API response (DELETE /users/{id})
+ */
+export interface DeleteUserResponse extends ApiResponse<null> {
+  meta: null;
+  data: null;
 }
 
 // ============================================================================
